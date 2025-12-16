@@ -1,0 +1,12 @@
+﻿using PsychoEngine.Core;
+
+namespace SampleGame;
+
+public class Program
+{
+    public static void Main()
+    {
+        using CoreEngine engine = new("Sample Game", 800, 600);
+        engine.Run();
+    }
+}
