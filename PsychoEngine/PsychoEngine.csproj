@@ -10,4 +10,23 @@
       <ProjectReference Include="..\..\..\Cloned\FNA\FNA.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Content Include="..\..\..\Libs\fnalibs\x64\FAudio.dll">
+        <Link>FAudio.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\Libs\fnalibs\x64\FNA3D.dll">
+        <Link>FNA3D.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\Libs\fnalibs\x64\libtheorafile.dll">
+        <Link>libtheorafile.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+      <Content Include="..\..\..\Libs\fnalibs\x64\SDL3.dll">
+        <Link>SDL3.dll</Link>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
 </Project>
