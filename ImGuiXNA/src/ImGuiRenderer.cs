@@ -1,4 +1,9 @@
-﻿using System.Runtime.InteropServices;
+﻿/*
+ * File provided by AristurtleDev -> https://github.com/HexaEngine/Hexa.NET.ImGui/tree/4120bcd2cf211ea136e38382916a7ad7764510f4/Examples/ExampleMonoGame
+ * Modified by Roy Soriano
+ */
+
+using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
