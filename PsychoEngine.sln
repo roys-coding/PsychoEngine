@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FNA.Core", "..\..\Cloned\FN
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SampleGame", "SampleGame\SampleGame.csproj", "{30C8E8D2-8DC0-411C-A829-842FAEE8B074}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImGuiXNA", "ImGuiXNA\ImGuiXNA.csproj", "{60708032-C4B3-46B9-ACDD-C464182C3DD2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{30C8E8D2-8DC0-411C-A829-842FAEE8B074}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30C8E8D2-8DC0-411C-A829-842FAEE8B074}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30C8E8D2-8DC0-411C-A829-842FAEE8B074}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60708032-C4B3-46B9-ACDD-C464182C3DD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60708032-C4B3-46B9-ACDD-C464182C3DD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60708032-C4B3-46B9-ACDD-C464182C3DD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60708032-C4B3-46B9-ACDD-C464182C3DD2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -6,7 +6,7 @@ public class Program
 {
     public static void Main()
     {
-        using CoreEngine engine = new("Sample Game", 800, 600);
+        using CoreEngine engine = new("Sample Game", 1280, 720);
         engine.Run();
     }
 }
