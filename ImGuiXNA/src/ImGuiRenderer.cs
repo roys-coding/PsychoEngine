@@ -3,7 +3,7 @@
  * Modified by Roy Soriano
  */
 
-#region
+#define FNA
 
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
@@ -13,8 +13,6 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Vector2 = System.Numerics.Vector2;
 
-#endregion
-
 namespace ImGuiXNA;
 
 public sealed class ImGuiRenderer
@@ -22,7 +20,7 @@ public sealed class ImGuiRenderer
     private const float WheelDelta = 120;
 
     private readonly Game  _game;
-    private          float _lastDeltaTime;
+    private          float _lastDeltaTime = float.Epsilon;
 
     // Graphics resources.
     private readonly GraphicsDevice  _graphicsDevice;
@@ -57,6 +55,7 @@ public sealed class ImGuiRenderer
         _game           = game;
         _graphicsDevice = game.GraphicsDevice;
         _textures       = new Dictionary<ImTextureID, TextureInfo>();
+        _effect = CreateEffect(_graphicsDevice);
 
         _rasterizerState = new RasterizerState
                            {
@@ -67,8 +66,6 @@ public sealed class ImGuiRenderer
                                ScissorTestEnable    = true,
                                SlopeScaleDepthBias  = 0,
                            };
-
-        _effect = CreateEffect(_graphicsDevice);
     }
 
     #region Life cycle
@@ -84,24 +81,26 @@ public sealed class ImGuiRenderer
         ImGui.GetIO().AddFocusEvent(_game.IsActive);
 
         // Register focus events.
-        _game.Activated += (s, a) =>
+        _game.Activated += (_, _) =>
                            {
                                ImGui.GetIO().AddFocusEvent(true);
                            };
 
-        _game.Deactivated += (s, a) =>
+        _game.Deactivated += (_, _) =>
                              {
                                  ImGui.GetIO().AddFocusEvent(false);
                              };
 
-        _game.Window.ClientSizeChanged += (s, a) =>
+        _game.Window.ClientSizeChanged += (_, _) =>
                                           {
-                                              ImGuiIOPtr io = ImGui.GetIO();
+                                              
+                                              int screenWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
+                                              int screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
 
                                               _effect.Projection =
                                                   Matrix.CreateOrthographicOffCenter(0.0f,
-                                                      io.DisplaySize.X,
-                                                      io.DisplaySize.Y,
+                                                      screenWidth,
+                                                      screenHeight,
                                                       0.0f,
                                                       -1.0f,
                                                       1.0f);
@@ -145,7 +144,6 @@ public sealed class ImGuiRenderer
         io.DeltaTime   = deltaTime;
 
         // Update display size and scale.
-        PresentationParameters parameters       = _graphicsDevice.PresentationParameters;
         int                    backBufferWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
         int                    backBufferHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
         io.DisplaySize             = new Vector2(backBufferWidth, backBufferHeight);
@@ -214,7 +212,7 @@ public sealed class ImGuiRenderer
 
     private static bool TryMapKeys(Keys key, out ImGuiKey imguiKey)
     {
-        // Special case not handled in the switch..
+        // Special case not handled in the switch.
         // If the actual key we put in is "None", return none and true;
         // otherwise, return none and false.
         if (key == Keys.None)
@@ -343,10 +341,7 @@ public sealed class ImGuiRenderer
 #if MONOGAME
         _game.Window.TextInput += (s, a) =>
                                   {
-                                      if (a.Character == '\t')
-                                      {
-                                          return;
-                                      }
+                                      if (a.Character == '\t') return;
 
                                       io.AddInputCharacter(a.Character);
                                   };
@@ -472,10 +467,19 @@ public sealed class ImGuiRenderer
 
     private BasicEffect CreateEffect(GraphicsDevice graphicsDevice)
     {
+        int screenWidth  = graphicsDevice.PresentationParameters.BackBufferWidth;
+        int screenHeight = graphicsDevice.PresentationParameters.BackBufferHeight;
+        
         return new BasicEffect(graphicsDevice)
                {
-                   World              = Matrix.Identity,
-                   View               = Matrix.Identity,
+                   World = Matrix.Identity,
+                   View  = Matrix.Identity,
+                   Projection = Matrix.CreateOrthographicOffCenter(0.0f,
+                                                                   screenWidth,
+                                                                   screenHeight,
+                                                                   0.0f,
+                                                                   -1.0f,
+                                                                   1.0f),
                    TextureEnabled     = true,
                    VertexColorEnabled = true,
                };
@@ -503,22 +507,22 @@ public sealed class ImGuiRenderer
         BlendState        lastBlendState   = _graphicsDevice.BlendState;
         SamplerState      lastSamplerState = _graphicsDevice.SamplerStates[0];
 
-        // Setup render state: 
-        // - alpha-blending enabled
+        // Setup render state:
+        // - alpha-blending enabled.
         _graphicsDevice.BlendFactor = Color.White;
         _graphicsDevice.BlendState  = BlendState.NonPremultiplied;
 
-        // - No face culling  
-        // - Scissor testing enabled
+        // - No face culling.
+        // - Scissor testing enabled.
         _graphicsDevice.RasterizerState = _rasterizerState;
 
-        // - Depth read-only (testing enabled, writes disabled)
+        // - Depth read-only (testing enabled, writes disabled).
         _graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
 
-        // - Point filtering for textures (no interpolation)
-        _graphicsDevice.SamplerStates[0] = SamplerState.PointClamp;
+        // - Linear filtering for textures.
+        _graphicsDevice.SamplerStates[0] = SamplerState.LinearClamp;
 
-        // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays)
+        // Handle cases of screen coordinates != from framebuffer coordinates (e.g. retina displays).
         drawData.ScaleClipRects(ImGui.GetIO().DisplayFramebufferScale);
 
         // Setup projection
@@ -530,7 +534,7 @@ public sealed class ImGuiRenderer
         UpdateBuffers(drawData);
         RenderCommandLists(drawData);
 
-        // Restore modified state
+        // Restore modified state.
         _graphicsDevice.Viewport          = lastViewport;
         _graphicsDevice.ScissorRectangle  = lastScissorBox;
         _graphicsDevice.RasterizerState   = lastRasterizer;
@@ -547,7 +551,7 @@ public sealed class ImGuiRenderer
             return;
         }
 
-        // Expand buffers if we need more room
+        // Expand buffers if we need more room.
         if (drawData.TotalVtxCount > _vertexBufferSize)
         {
             _vertexBuffer?.Dispose();
@@ -576,17 +580,17 @@ public sealed class ImGuiRenderer
             _indexData = new byte[_indexBufferSize * sizeof(ushort)];
         }
 
-        // Copy ImGui's vertices and indices to a set of managed byte arrays
-        int vtxOffset = 0;
-        int idxOffset = 0;
+        // Copy ImGui's vertices and indices to a set of managed byte arrays.
+        int vertexOffset = 0;
+        int indexOffset = 0;
 
         for (int n = 0; n < drawData.CmdListsCount; n++)
         {
             ImDrawListPtr cmdList = drawData.CmdLists.Data[n];
 
-            fixed (void* vtxDstPtr = &_vertexData[vtxOffset * DrawVertDeclaration.Size])
+            fixed (void* vtxDstPtr = &_vertexData[vertexOffset * DrawVertDeclaration.Size])
             {
-                fixed (void* idxDstPtr = &_indexData[idxOffset * sizeof(ushort)])
+                fixed (void* idxDstPtr = &_indexData[indexOffset * sizeof(ushort)])
                 {
                     Buffer.MemoryCopy(cmdList.VtxBuffer.Data,
                                       vtxDstPtr,
@@ -600,11 +604,11 @@ public sealed class ImGuiRenderer
                 }
             }
 
-            vtxOffset += cmdList.VtxBuffer.Size;
-            idxOffset += cmdList.IdxBuffer.Size;
+            vertexOffset += cmdList.VtxBuffer.Size;
+            indexOffset += cmdList.IdxBuffer.Size;
         }
 
-        // Copy the managed byte arrays to the gpu vertex- and index buffers
+        // Copy the managed byte arrays to the gpu vertex- and index buffers.
         _vertexBuffer.SetData(_vertexData, 0, drawData.TotalVtxCount * DrawVertDeclaration.Size);
         _indexBuffer.SetData(_indexData, 0, drawData.TotalIdxCount   * sizeof(ushort));
     }
@@ -614,36 +618,35 @@ public sealed class ImGuiRenderer
         _graphicsDevice.SetVertexBuffer(_vertexBuffer);
         _graphicsDevice.Indices = _indexBuffer;
 
-        int vtxOffset = 0;
-        int idxOffset = 0;
+        int vertexOffset = 0;
+        int indexOffset = 0;
 
-        for (int n = 0; n < drawData.CmdListsCount; n++)
+        for (int listIndex = 0; listIndex < drawData.CmdListsCount; listIndex++)
         {
-            ImDrawListPtr cmdList = drawData.CmdLists.Data[n];
+            ImDrawListPtr commandList = drawData.CmdLists.Data[listIndex];
 
-            for (int cmdi = 0; cmdi < cmdList.CmdBuffer.Size; cmdi++)
+            for (int commandIndex = 0; commandIndex < commandList.CmdBuffer.Size; commandIndex++)
             {
-                ImDrawCmdPtr drawCmd = &cmdList.CmdBuffer.Data[cmdi];
+                ImDrawCmdPtr drawCommand = &commandList.CmdBuffer.Data[commandIndex];
 
-                if (drawCmd.ElemCount == 0)
-                {
-                    continue;
-                }
+                if (drawCommand.ElemCount == 0) continue;
 
                 // In v1.92, we need to handle ImTextureRef instead of ImTextureID
-                ImTextureRef textureRef = drawCmd.TexRef;
-                ImTextureID  texId      = textureRef.GetTexID();
+                ImTextureRef textureRef = drawCommand.TexRef;
+                ImTextureID  textureId      = textureRef.GetTexID();
 
-                if (!_textures.TryGetValue(texId, out TextureInfo textureInfo))
+                TextureInfo textureInfo;
+
+                if (!_textures.TryGetValue(textureId, out textureInfo))
                 {
                     throw new
-                        InvalidOperationException($"Could not find a texture with id '{texId}', please check your bindings");
+                        InvalidOperationException($"Could not find a texture with id '{textureId}', please check your bindings.");
                 }
 
-                _graphicsDevice.ScissorRectangle = new Rectangle((int)drawCmd.ClipRect.X,
-                                                                 (int)drawCmd.ClipRect.Y,
-                                                                 (int)(drawCmd.ClipRect.Z - drawCmd.ClipRect.X),
-                                                                 (int)(drawCmd.ClipRect.W - drawCmd.ClipRect.Y));
+                _graphicsDevice.ScissorRectangle = new Rectangle((int)drawCommand.ClipRect.X,
+                                                                 (int)drawCommand.ClipRect.Y,
+                                                                 (int)(drawCommand.ClipRect.Z - drawCommand.ClipRect.X),
+                                                                 (int)(drawCommand.ClipRect.W - drawCommand.ClipRect.Y));
 
                 _effect.Texture = textureInfo.Texture;
 
@@ -651,19 +654,17 @@ public sealed class ImGuiRenderer
                 {
                     pass.Apply();
 
-#pragma warning disable CS0618 // // FNA does not expose an alternative method.
                     _graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList,
-                                                          (int)drawCmd.VtxOffset + vtxOffset,
+                                                          (int)drawCommand.VtxOffset + vertexOffset,
                                                           0,
-                                                          cmdList.VtxBuffer.Size,
-                                                          (int)drawCmd.IdxOffset + idxOffset,
-                                                          (int)drawCmd.ElemCount / 3);
-#pragma warning restore CS0618
+                                                          commandList.VtxBuffer.Size,
+                                                          (int)drawCommand.IdxOffset + indexOffset,
+                                                          (int)drawCommand.ElemCount / 3);
                 }
             }
 
-            vtxOffset += cmdList.VtxBuffer.Size;
-            idxOffset += cmdList.IdxBuffer.Size;
+            vertexOffset += commandList.VtxBuffer.Size;
+            indexOffset += commandList.IdxBuffer.Size;
         }
     }
 

@@ -1,20 +1,23 @@
 ﻿using Hexa.NET.ImGui;
 using ImGuiXNA;
+using Microsoft.Xna.Framework.Input;
 
 namespace PsychoEngine.Core;
 
 public class CoreEngine : Game
 {
-    private ImGuiRenderer _imGuiRenderer;
+    private          ImGuiRenderer?        _imGuiRenderer;
+    private readonly GraphicsDeviceManager _deviceManager;
     
     public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
     {
-        GraphicsDeviceManager deviceManager = new(this);
-        deviceManager.PreferredBackBufferWidth  = windowWidth;
-        deviceManager.PreferredBackBufferHeight = windowHeight;
-        IsMouseVisible                          = true;
+        _deviceManager                           = new GraphicsDeviceManager(this);
+        _deviceManager.PreferredBackBufferWidth  = windowWidth;
+        _deviceManager.PreferredBackBufferHeight = windowHeight;
+        IsMouseVisible                           = true;
+        Window.AllowUserResizing                 = true;
 
-        Window.Title = windowTitle;
+        Window.Title   = windowTitle;
     }
 
     protected override void Initialize()
@@ -25,31 +28,35 @@ public class CoreEngine : Game
         base.Initialize();
     }
 
-    override protected void LoadContent()
-    {
-        base.LoadContent();
-    }
-
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
+        
+        KeyboardState keyboardState = Keyboard.GetState();
+
+        if (keyboardState.IsKeyDown(Keys.T))
+        {
+            _deviceManager.SynchronizeWithVerticalRetrace = !_deviceManager.SynchronizeWithVerticalRetrace;
+            _deviceManager.ApplyChanges();
+        }
     }
 
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
         
-        _imGuiRenderer.NewFrame(gameTime);
+        _imGuiRenderer?.NewFrame(gameTime);
         ImGui.ShowDemoWindow();
         ImGui.Text($"Game Time: {gameTime.ElapsedGameTime}");
-        _imGuiRenderer.Render();
+        ImGui.Text($"VSync: {_deviceManager.SynchronizeWithVerticalRetrace}");
+        _imGuiRenderer?.Render();
         
         base.Draw(gameTime);
     }
     
     protected override void UnloadContent()
     {
-        _imGuiRenderer.Dispose();
+        _imGuiRenderer?.Dispose();
 
         base.UnloadContent();
     }
