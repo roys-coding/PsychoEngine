@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace ImGuiXNA;
 
-public static class DrawVertDeclaration
+internal static class DrawVertDeclaration
 {
     public static readonly VertexDeclaration Declaration;
     public static readonly int               Size;
