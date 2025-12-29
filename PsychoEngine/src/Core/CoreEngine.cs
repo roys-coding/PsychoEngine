@@ -6,7 +6,7 @@ namespace PsychoEngine.Core;
 
 public class CoreEngine : Game
 {
-    private          ImGuiRenderer?        _imGuiRenderer;
+    private          ImGuiManager        _imGuiManager;
     private readonly GraphicsDeviceManager _deviceManager;
     
     public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
@@ -18,13 +18,13 @@ public class CoreEngine : Game
         Window.AllowUserResizing                 = true;
 
         Window.Title   = windowTitle;
+        
+        _imGuiManager = new ImGuiManager(this);
     }
 
     protected override void Initialize()
     {
-        _imGuiRenderer = new ImGuiRenderer(this);
-        _imGuiRenderer.Initialize();
-        
+        _imGuiManager.Initialize();
         base.Initialize();
     }
 
@@ -44,19 +44,15 @@ public class CoreEngine : Game
     protected override void Draw(GameTime gameTime)
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
-        
-        _imGuiRenderer?.NewFrame(gameTime);
-        ImGui.ShowDemoWindow();
-        ImGui.Text($"Game Time: {gameTime.ElapsedGameTime}");
-        ImGui.Text($"VSync: {_deviceManager.SynchronizeWithVerticalRetrace}");
-        _imGuiRenderer?.Render();
+
+        _imGuiManager.Draw(gameTime);
         
         base.Draw(gameTime);
     }
     
     protected override void UnloadContent()
     {
-        _imGuiRenderer?.Dispose();
+        _imGuiManager.Terminate();
 
         base.UnloadContent();
     }

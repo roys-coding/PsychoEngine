@@ -55,7 +55,6 @@ public sealed class ImGuiRenderer
         _game           = game;
         _graphicsDevice = game.GraphicsDevice;
         _textures       = new Dictionary<ImTextureID, TextureInfo>();
-        _effect = CreateEffect(_graphicsDevice);
 
         _rasterizerState = new RasterizerState
                            {
@@ -72,6 +71,9 @@ public sealed class ImGuiRenderer
 
     public void Initialize()
     {
+        // Create graphics resources.
+        _effect = CreateEffect(_graphicsDevice);
+        
         ImGuiContextPtr context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
 
