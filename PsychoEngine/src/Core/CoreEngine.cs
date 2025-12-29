@@ -41,6 +41,7 @@ public class CoreEngine : Game
         
         _imGuiRenderer.NewFrame(gameTime);
         ImGui.ShowDemoWindow();
+        ImGui.Text($"Game Time: {gameTime.ElapsedGameTime}");
         _imGuiRenderer.Render();
         
         base.Draw(gameTime);

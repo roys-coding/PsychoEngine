@@ -21,7 +21,8 @@ public sealed class ImGuiRenderer
 {
     private const float WheelDelta = 120;
 
-    private readonly Game _game;
+    private readonly Game  _game;
+    private          float _lastDeltaTime;
 
     // Graphics resources.
     private readonly GraphicsDevice  _graphicsDevice;
@@ -44,8 +45,10 @@ public sealed class ImGuiRenderer
 
     // Input.
     private readonly Keys[] _allKeys = Enum.GetValues<Keys>();
-    private          int    _scrollWheelValue;
-    // private          bool   _imGuiStartedTextInput;
+#if MONOGAME
+    private int _scrollWheelValueX;
+#endif
+    private int _scrollWheelValueY;
 
     public ImGuiRenderer(Game game)
     {
@@ -64,6 +67,8 @@ public sealed class ImGuiRenderer
                                ScissorTestEnable    = true,
                                SlopeScaleDepthBias  = 0,
                            };
+
+        _effect = CreateEffect(_graphicsDevice);
     }
 
     #region Life cycle
@@ -76,19 +81,31 @@ public sealed class ImGuiRenderer
         SetupBackend();
         SetupInput();
 
+        ImGui.GetIO().AddFocusEvent(_game.IsActive);
+
         // Register focus events.
-        _game.Activated   += GameOnFocusChanged;
-        _game.Deactivated += GameOnFocusChanged;
+        _game.Activated += (s, a) =>
+                           {
+                               ImGui.GetIO().AddFocusEvent(true);
+                           };
 
-        return;
+        _game.Deactivated += (s, a) =>
+                             {
+                                 ImGui.GetIO().AddFocusEvent(false);
+                             };
 
-        void GameOnFocusChanged(object sender, EventArgs e)
-        {
-            ImGuiIOPtr io = ImGui.GetIO();
-            
-            io.AddFocusEvent(_game.IsActive);
-            io.AppFocusLost = !_game.IsActive;
-        }
+        _game.Window.ClientSizeChanged += (s, a) =>
+                                          {
+                                              ImGuiIOPtr io = ImGui.GetIO();
+
+                                              _effect.Projection =
+                                                  Matrix.CreateOrthographicOffCenter(0.0f,
+                                                      io.DisplaySize.X,
+                                                      io.DisplaySize.Y,
+                                                      0.0f,
+                                                      -1.0f,
+                                                      1.0f);
+                                          };
     }
 
     public void Dispose()
@@ -119,12 +136,13 @@ public sealed class ImGuiRenderer
     {
         ImGuiIOPtr io = ImGui.GetIO();
 
-        // Update delta time.
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
-        // Delta time must be positive.
-        deltaTime = MathF.Max(deltaTime, float.Epsilon);
 
-        io.DeltaTime = deltaTime;
+        // Delta time must be positive.
+        if (deltaTime <= 0f) deltaTime = _lastDeltaTime;
+
+        _lastDeltaTime = deltaTime;
+        io.DeltaTime   = deltaTime;
 
         // Update display size and scale.
         PresentationParameters parameters       = _graphicsDevice.PresentationParameters;
@@ -142,6 +160,11 @@ public sealed class ImGuiRenderer
     {
         ImGui.Render();
 
+        if (_effect == null || _effect.IsDisposed)
+        {
+            _effect = CreateEffect(_graphicsDevice);
+        }
+
         ImDrawDataPtr drawData = ImGui.GetDrawData();
         ProcessTextureUpdates(drawData);
         RenderDrawData(drawData);
@@ -149,8 +172,8 @@ public sealed class ImGuiRenderer
 
     private void UpdateInput()
     {
-        ImGuiIOPtr    io       = ImGui.GetIO();
-        
+        ImGuiIOPtr io = ImGui.GetIO();
+
         if (io.AppFocusLost)
         {
             return;
@@ -166,23 +189,30 @@ public sealed class ImGuiRenderer
         io.AddMouseButtonEvent(3, mouse.XButton1     == ButtonState.Pressed);
         io.AddMouseButtonEvent(4, mouse.XButton2     == ButtonState.Pressed);
 
-        // float mouseWheelX = (mouse.HorizontalScrollWheelValue - _horizontalScrollWheelValue) / WHEEL_DELTA;
-        float mouseWheelY = (mouse.ScrollWheelValue - _scrollWheelValue) / WheelDelta;
-        io.AddMouseWheelEvent(0f, mouseWheelY);
+#if MONOGAME
+        float mouseWheelX = (mouse.HorizontalScrollWheelValue - _scrollWheelValueX) / WheelDelta;
+        float mouseWheelY = (mouse.ScrollWheelValue           - _scrollWheelValueY) / WheelDelta;
+        io.AddMouseWheelEvent(mouseWheelX, mouseWheelY);
+#endif
 
-        _scrollWheelValue = mouse.ScrollWheelValue;
-        // _horizontalScrollWheelValue = mouse.HorizontalScrollWheelValue;
+#if FNA
+        float mouseWheelY = (mouse.ScrollWheelValue - _scrollWheelValueY) / WheelDelta;
+        io.AddMouseWheelEvent(0f, mouseWheelY);
+#endif
+
+        _scrollWheelValueY = mouse.ScrollWheelValue;
 
         foreach (Keys key in _allKeys)
         {
-            if (TryMapKeys(key, out ImGuiKey imguiKey))
-            {
-                io.AddKeyEvent(imguiKey, keyboard.IsKeyDown(key));
-            }
+            ImGuiKey imguiKey;
+
+            if (!TryMapKeys(key, out imguiKey)) continue;
+
+            io.AddKeyEvent(imguiKey, keyboard.IsKeyDown(key));
         }
     }
 
-    private bool TryMapKeys(Keys key, out ImGuiKey imguiKey)
+    private static bool TryMapKeys(Keys key, out ImGuiKey imguiKey)
     {
         // Special case not handled in the switch..
         // If the actual key we put in is "None", return none and true;
@@ -310,21 +340,19 @@ public sealed class ImGuiRenderer
     {
         ImGuiIOPtr io = ImGui.GetIO();
 
-        //////////////////////////////////////////////
-        // MonoGame Specific
-        // _game.Window.TextInput += (s, a) =>
-        // {
-        //     if (a.Character == '\t')
-        //     {
-        //         return;
-        //     }
-        //
-        //     io.AddInputCharacter(a.Character);
-        // };
-        //////////////////////////////////////////////
+#if MONOGAME
+        _game.Window.TextInput += (s, a) =>
+                                  {
+                                      if (a.Character == '\t')
+                                      {
+                                          return;
+                                      }
 
-        //////////////////////////////////////////////
-        // FNA-specific
+                                      io.AddInputCharacter(a.Character);
+                                  };
+#endif
+
+#if FNA
         TextInputEXT.TextInput += c =>
                                   {
                                       if (c == '\t')
@@ -334,7 +362,7 @@ public sealed class ImGuiRenderer
 
                                       io.AddInputCharacter(c);
                                   };
-        //////////////////////////////////////////////
+#endif
     }
 
     #endregion
@@ -345,13 +373,17 @@ public sealed class ImGuiRenderer
     {
         switch (textureData.Status)
         {
-            case ImTextureStatus.WantCreate:  CreateTexture(textureData); break;
+            case ImTextureStatus.WantCreate: CreateTexture(textureData); break;
+
             case ImTextureStatus.WantUpdates: UpdateTextureData(textureData); break;
+
             case ImTextureStatus.WantDestroy: DestroyTexture(textureData); break;
 
             case ImTextureStatus.Ok:
             case ImTextureStatus.Destroyed:
-            default: break;
+            default:
+                // Do nothing.
+                break;
         }
     }
 
@@ -401,14 +433,13 @@ public sealed class ImGuiRenderer
     {
         IntPtr texId = textureData.GetTexID();
 
-        if (!_textures.TryGetValue(texId, out TextureInfo textureInfo))
-        {
-            return;
-        }
+        TextureInfo textureInfo;
+
+        if (!_textures.TryGetValue(texId, out textureInfo)) return;
 
         Texture2D texture = textureInfo.Texture;
 
-        // Check if the texture's dimensions or format have changed
+        // Check if the texture's dimensions or format have changed.
         SurfaceFormat newFormat =
             textureData.Format == ImTextureFormat.Rgba32 ? SurfaceFormat.Color : SurfaceFormat.Alpha8;
 
@@ -439,6 +470,17 @@ public sealed class ImGuiRenderer
 
     #region Rendering internals
 
+    private BasicEffect CreateEffect(GraphicsDevice graphicsDevice)
+    {
+        return new BasicEffect(graphicsDevice)
+               {
+                   World              = Matrix.Identity,
+                   View               = Matrix.Identity,
+                   TextureEnabled     = true,
+                   VertexColorEnabled = true,
+               };
+    }
+
     private unsafe void ProcessTextureUpdates(ImDrawDataPtr drawData)
     {
         if (drawData.Textures.Data == null) return;
@@ -448,25 +490,6 @@ public sealed class ImGuiRenderer
             ImTextureDataPtr textureData = drawData.Textures.Data[i];
             UpdateTexture(textureData);
         }
-    }
-
-    private Effect UpdateEffect(Texture2D texture)
-    {
-        ImGuiIOPtr io = ImGui.GetIO();
-
-        _effect ??= new BasicEffect(_graphicsDevice);
-
-        _effect.World = Matrix.Identity;
-        _effect.View  = Matrix.Identity;
-
-        _effect.Projection =
-            Matrix.CreateOrthographicOffCenter(0.0f, io.DisplaySize.X, io.DisplaySize.Y, 0.0f, -1.0f, 1.0f);
-
-        _effect.TextureEnabled     = true;
-        _effect.Texture            = texture;
-        _effect.VertexColorEnabled = true;
-
-        return _effect;
     }
 
     private void RenderDrawData(ImDrawDataPtr drawData)
@@ -622,9 +645,9 @@ public sealed class ImGuiRenderer
                                                                  (int)(drawCmd.ClipRect.Z - drawCmd.ClipRect.X),
                                                                  (int)(drawCmd.ClipRect.W - drawCmd.ClipRect.Y));
 
-                Effect effect = UpdateEffect(textureInfo.Texture);
+                _effect.Texture = textureInfo.Texture;
 
-                foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                foreach (EffectPass pass in _effect.CurrentTechnique.Passes)
                 {
                     pass.Apply();
 
