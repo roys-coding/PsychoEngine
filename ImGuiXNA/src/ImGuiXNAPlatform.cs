@@ -6,9 +6,10 @@ using Vector2 = System.Numerics.Vector2;
 
 namespace ImGuiXNA;
 
-public sealed class ImGuiXnaPlatform(Game game)
+public sealed class ImGuiXnaPlatform
 {
-    private GraphicsDevice _graphicsDevice;
+    private readonly Game           _game;
+    private          GraphicsDevice _graphicsDevice;
     // Last delta-time is used if current delta-time is zero, to avoid crashes.
     // Initialized to epsilon, so delta-time is not zero in the
     // rare occasions where last delta-time is the first value used.
@@ -22,12 +23,17 @@ public sealed class ImGuiXnaPlatform(Game game)
 #if MONOGAME
     private float _previousWheelValueX;
 #endif
-    private float           _previousWheelValueY;
-    private MouseState      _previousMouseState;
-    private KeyboardState   _previousKeyboardState;
-    private TouchCollection _previousTouchState;
+    private          float           _previousWheelValueY;
+    private          MouseState      _previousMouseState;
+    private          KeyboardState   _previousKeyboardState;
+    private          TouchCollection _previousTouchState;
 
     #region Life cycle
+    
+    public ImGuiXnaPlatform(Game game)
+    {
+        _game = game;
+    }
 
     public unsafe void Initialize(GraphicsDevice graphicsDevice)
     {
@@ -63,12 +69,12 @@ public sealed class ImGuiXnaPlatform(Game game)
         
         SetupInput();
         
-        game.Activated += (_, _) =>
+        _game.Activated += (_, _) =>
                             {
                                 ImGui.GetIO().AddFocusEvent(true);
                             };
 
-        game.Deactivated += (_, _) =>
+        _game.Deactivated += (_, _) =>
                              {
                                  ImGui.GetIO().AddFocusEvent(false);
                              };
