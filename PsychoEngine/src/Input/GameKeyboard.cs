@@ -18,10 +18,12 @@ public static class GameKeyboard
 
     public static readonly Keys[] AllKeys;
 
+    private static FocusLostInputBehaviour _focusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
+
     private static KeyboardState _currentState;
     private static KeyboardState _previousState;
     private static Keys[]?       _allKeysDown;
-    
+
     public static Keys[] AllKeysDown
     {
         get
@@ -32,11 +34,26 @@ public static class GameKeyboard
             return _allKeysDown;
         }
     }
-    
-    public static bool ModShift => IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
-    public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
-    public static bool ModAlt => IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt);
-    public static bool ModSuper => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
+
+    public static bool ModShift
+    {
+        get => IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
+    }
+
+    public static bool ModControl
+    {
+        get => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
+    }
+
+    public static bool ModAlt
+    {
+        get => IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt);
+    }
+
+    public static bool ModSuper
+    {
+        get => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
+    }
 
     static GameKeyboard()
     {
@@ -56,18 +73,22 @@ public static class GameKeyboard
             return;
         }
 
+        int  focusLost                                 = (int)_focusLostInputBehaviour;
+        bool focusLostChanged                          = ImGui.DragInt("FocusLost", ref focusLost, 0, 1);
+        if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
+
         foreach (Keys key in AllKeys)
         {
             KeyState state     = GetKey(key);
-            string     keyString = $"{key}: {state}";
+            string   keyString = $"{key}: {state}";
 
-            if (WasKeyPressed(key)) keyString += " Pressed";
+            if (WasKeyPressed(key)) keyString  += " Pressed";
             if (WasKeyReleased(key)) keyString += " Released";
 
             switch (state)
             {
-                case KeyState.Down:     ImGui.Text(keyString); break;
-                case KeyState.Up:       ImGui.TextDisabled(keyString); break;
+                case KeyState.Down: ImGui.Text(keyString); break;
+                case KeyState.Up:   ImGui.TextDisabled(keyString); break;
             }
         }
 
@@ -76,11 +97,28 @@ public static class GameKeyboard
 
     public static void Update(Game game)
     {
-        _previousState = _currentState;
-        _currentState  = Keyboard.GetState();
+        if (!game.IsActive || ImGui.GetIO().WantCaptureKeyboard)
+        {
+            switch (_focusLostInputBehaviour)
+            {
+                case FocusLostInputBehaviour.ClearState:
+                    _previousState = _currentState;
+                    _currentState  = default(KeyboardState);
+
+                    break;
+
+                case FocusLostInputBehaviour.MaintainState: _previousState = _currentState; break;
+            }
+        }
+        else
+        {
+            _previousState = _currentState;
+            _currentState  = Keyboard.GetState();
+        }
         
+
         // Clear previous frame's cached pressed keys.
-        _allKeysDown   = null;
+        _allKeysDown = null;
 
         // Handle input handlers.
         foreach (Keys key in AllKeys)
