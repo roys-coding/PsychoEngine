@@ -1,4 +1,6 @@
-﻿using System.Runtime.InteropServices;
+﻿#define FNA
+
+using System.Runtime.InteropServices;
 using Hexa.NET.Utilities;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -67,7 +69,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
                                ScissorTestEnable    = true,
                                SlopeScaleDepthBias  = 0,
                            };
-    }    
+    }
     
     public void Dispose()
     {
@@ -363,10 +365,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
 
     private unsafe void UpdateBuffers(ImDrawDataPtr drawData)
     {
-        if (drawData.TotalVtxCount == 0)
-        {
-            return;
-        }
+        if (drawData.TotalVtxCount == 0) return;
 
         // Expand buffers if we need more room.
         if (drawData.TotalVtxCount > _vertexBufferSize)
@@ -406,19 +405,17 @@ public sealed class ImGuiXnaRenderer : IDisposable
             ImDrawListPtr cmdList = drawData.CmdLists.Data[n];
 
             fixed (void* vtxDstPtr = &_vertexData[vertexOffset * DrawVertDeclaration.Size])
+            fixed (void* idxDstPtr = &_indexData[indexOffset * sizeof(ushort)])
             {
-                fixed (void* idxDstPtr = &_indexData[indexOffset * sizeof(ushort)])
-                {
-                    Buffer.MemoryCopy(cmdList.VtxBuffer.Data,
-                                      vtxDstPtr,
-                                      _vertexData.Length,
-                                      cmdList.VtxBuffer.Size * DrawVertDeclaration.Size);
+                Buffer.MemoryCopy(cmdList.VtxBuffer.Data,
+                                  vtxDstPtr,
+                                  _vertexData.Length,
+                                  cmdList.VtxBuffer.Size * DrawVertDeclaration.Size);
 
-                    Buffer.MemoryCopy(cmdList.IdxBuffer.Data,
-                                      idxDstPtr,
-                                      _indexData.Length,
-                                      cmdList.IdxBuffer.Size * sizeof(ushort));
-                }
+                Buffer.MemoryCopy(cmdList.IdxBuffer.Data,
+                                  idxDstPtr,
+                                  _indexData.Length,
+                                  cmdList.IdxBuffer.Size * sizeof(ushort));
             }
 
             vertexOffset += cmdList.VtxBuffer.Size;

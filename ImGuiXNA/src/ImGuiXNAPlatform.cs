@@ -1,4 +1,6 @@
-﻿using Hexa.NET.Utilities;
+﻿#define FNA
+
+using Hexa.NET.Utilities;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
@@ -24,6 +26,8 @@ public sealed class ImGuiXnaPlatform
     private float _previousWheelValueX;
 #endif
     private          float           _previousWheelValueY;
+    
+    // Input states.
     private          MouseState      _previousMouseState;
     private          KeyboardState   _previousKeyboardState;
     private          TouchCollection _previousTouchState;
@@ -42,6 +46,7 @@ public sealed class ImGuiXnaPlatform
         ImGuiIOPtr         io         = ImGui.GetIO();
         ImGuiPlatformIOPtr platformIo = ImGui.GetPlatformIO();
 
+        // Set up backend flags.
 #if FNA
         io.BackendPlatformName = "imgui_impl_fna".ToUTF8Ptr();
 #endif
@@ -53,9 +58,7 @@ public sealed class ImGuiXnaPlatform
         io.BackendFlags |= ImGuiBackendFlags.HasSetMousePos;
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
 
-        /* TODO: Implement further platform features, such as clipboard, etc.*/
-
-        // Set up platform IO for texture management.
+        // Set up platform texture capabilities.
         if (_graphicsDevice.GraphicsProfile == GraphicsProfile.Reach)
         {
             platformIo.RendererTextureMaxWidth  = 2048;
@@ -66,18 +69,16 @@ public sealed class ImGuiXnaPlatform
             platformIo.RendererTextureMaxWidth  = 4096;
             platformIo.RendererTextureMaxHeight = 4096;
         }
-        
-        SetupInput();
-        
-        _game.Activated += (_, _) =>
-                            {
-                                ImGui.GetIO().AddFocusEvent(true);
-                            };
 
-        _game.Deactivated += (_, _) =>
-                             {
-                                 ImGui.GetIO().AddFocusEvent(false);
-                             };
+        /* TODO: Implement further platform features, such as clipboard, etc.*/
+
+        // Set up text input events.
+#if MONOGAME
+        _game.Window.TextInput += (_, _) => io.AddInputCharacter(a.Character);
+#endif
+#if FNA
+        TextInputEXT.TextInput += c => io.AddInputCharacter(c);
+#endif
     }
 
     #endregion
@@ -102,38 +103,26 @@ public sealed class ImGuiXnaPlatform
 
         UpdateInput();
 
+        // Temporary solution to keyboard capturing.
+        if (io.WantCaptureKeyboard)
+        {
+            TextInputEXT.StartTextInput();
+        }
+        else
+        {
+            TextInputEXT.StopTextInput();
+        }
+        
+        // TODO: Implement a correct solution for input capturing.
+
         ImGui.NewFrame();
-    }
-    
-    private static void SetupInput()
-    {
-        ImGuiIOPtr io = ImGui.GetIO();
-
-#if MONOGAME
-        _game.Window.TextInput += (s, a) =>
-                                  {
-                                      if (a.Character == '\t') return;
-
-                                      io.AddInputCharacter(a.Character);
-                                  };
-#endif
-
-#if FNA
-        TextInputEXT.TextInput += c =>
-                                  {
-                                      if (c == '\t')
-                                      {
-                                          return;
-                                      }
-
-                                      io.AddInputCharacter(c);
-                                  };
-#endif
     }
 
     private void UpdateInput()
     {
         ImGuiIOPtr io = ImGui.GetIO();
+        
+        io.AddFocusEvent(_game.IsActive);
 
         if (io.AppFocusLost) return;
 
