@@ -36,7 +36,7 @@ public class CoreEngine : Game
 
     protected override void Initialize()
     {
-        _imGuiManager.Initialize();
+        _imGuiManager.Initialize(_deviceManager.GraphicsDevice);
         base.Initialize();
     }
 

@@ -1,6 +1,7 @@
 ﻿using Hexa.NET.ImGui;
 using Hexa.NET.ImGui.Utilities;
 using ImGuiXNA;
+using Microsoft.Xna.Framework.Graphics;
 using Vector2 = System.Numerics.Vector2;
 using Vector4 = System.Numerics.Vector4;
 
@@ -11,18 +12,25 @@ public class ImGuiManager
     private const    string        FontsPath = @"Content\Fonts\";
     private const    int         FontSize  = 15;
     private const    int         IconsFontSize  = 19;
-    private readonly ImGuiRenderer _renderer;
+    private readonly ImGuiXnaRenderer _renderer;
+    private readonly ImGuiXnaPlatform _platform;
 
     public event EventHandler? OnLayout;
 
     public ImGuiManager(Game game)
     {
-        _renderer = new ImGuiRenderer(game);
+        _renderer = new ImGuiXnaRenderer(game);
+        _platform = new ImGuiXnaPlatform(game);
     }
 
-    public unsafe void Initialize()
+    public unsafe void Initialize(GraphicsDevice graphicsDevice)
     {
-        _renderer.Initialize();
+        // Set up ImGui context.
+        ImGuiContextPtr context = ImGui.CreateContext();
+        ImGui.SetCurrentContext(context);
+        
+        _platform.Initialize(graphicsDevice);
+        _renderer.Initialize(graphicsDevice);
 
         ImGuiIOPtr     io    = ImGui.GetIO();
         ImGuiStylePtr  style = ImGui.GetStyle();
@@ -265,7 +273,7 @@ public class ImGuiManager
 
     public void Draw(GameTime gameTime)
     {
-        _renderer.NewFrame(gameTime);
+        _platform.NewFrame(gameTime);
         OnLayout?.Invoke(this, EventArgs.Empty);
         _renderer.Render();
     }
@@ -273,5 +281,6 @@ public class ImGuiManager
     public void Terminate()
     {
         _renderer.Dispose();
+        ImGui.DestroyContext();
     }
 }

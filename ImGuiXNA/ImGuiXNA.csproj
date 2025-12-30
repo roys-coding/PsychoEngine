@@ -8,12 +8,12 @@
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-      <DefineConstants>TRACE</DefineConstants>
+      <DefineConstants>TRACE;FNA</DefineConstants>
     </PropertyGroup>
 
     <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-      <DefineConstants>TRACE</DefineConstants>
+      <DefineConstants>TRACE;FNA</DefineConstants>
     </PropertyGroup>
 
     <ItemGroup>
