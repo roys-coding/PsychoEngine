@@ -126,7 +126,7 @@ public sealed class ImGuiXnaPlatform
         }
 
         // TODO: Implement a correct solution for input capturing.
-
+        
         MouseState      mouse    = Mouse.GetState();
         TouchCollection touches  = TouchPanel.GetState();
         KeyboardState   keyboard = Keyboard.GetState();
