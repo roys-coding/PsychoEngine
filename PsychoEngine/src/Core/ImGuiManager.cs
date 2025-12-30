@@ -3,9 +3,14 @@ using Hexa.NET.ImGui;
 
 namespace PsychoEngine.Core;
 
-public class ImGuiManager(Game game)
+public class ImGuiManager
 {
-    private readonly ImGuiRenderer _renderer = new(game);
+    private readonly ImGuiRenderer _renderer;
+    
+    public ImGuiManager(Game game)
+    {
+        _renderer = new ImGuiRenderer(game);
+    }
 
     public void Initialize()
     {
@@ -14,9 +19,9 @@ public class ImGuiManager(Game game)
 
     public void Draw(GameTime gameTime)
     {
-        _renderer?.NewFrame(gameTime);
+        _renderer.NewFrame(gameTime);
         ImGui.ShowDemoWindow();
-        _renderer?.Render();
+        _renderer.Render();
     }
 
     public void Terminate()

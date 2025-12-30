@@ -5,6 +5,8 @@
 
 #define FNA
 
+#region
+
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
 using Hexa.NET.Utilities;
@@ -13,17 +15,19 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Vector2 = System.Numerics.Vector2;
 
+#endregion
+
 namespace ImGuiXNA;
 
 public sealed class ImGuiRenderer
 {
     private const float WheelDelta = 120;
 
-    private readonly Game  _game;
-    private          float _lastDeltaTime = float.Epsilon;
+    private readonly Game           _game;
+    private          GraphicsDevice _graphicsDevice;
+    private          float          _lastDeltaTime = float.Epsilon;
 
     // Graphics resources.
-    private readonly GraphicsDevice  _graphicsDevice;
     private readonly RasterizerState _rasterizerState;
     private          BasicEffect     _effect;
 
@@ -52,9 +56,8 @@ public sealed class ImGuiRenderer
     {
         ArgumentNullException.ThrowIfNull(game);
 
-        _game           = game;
-        _graphicsDevice = game.GraphicsDevice;
-        _textures       = new Dictionary<ImTextureID, TextureInfo>();
+        _game     = game;
+        _textures = new Dictionary<ImTextureID, TextureInfo>();
 
         _rasterizerState = new RasterizerState
                            {
@@ -72,8 +75,9 @@ public sealed class ImGuiRenderer
     public void Initialize()
     {
         // Create graphics resources.
-        _effect = CreateEffect(_graphicsDevice);
-        
+        _graphicsDevice = _game.GraphicsDevice;
+        _effect         = CreateEffect(_graphicsDevice);
+
         ImGuiContextPtr context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
 
@@ -95,9 +99,10 @@ public sealed class ImGuiRenderer
 
         _game.Window.ClientSizeChanged += (_, _) =>
                                           {
-                                              
-                                              int screenWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
-                                              int screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
+                                              int screenWidth = _graphicsDevice.PresentationParameters.BackBufferWidth;
+
+                                              int screenHeight = _graphicsDevice.PresentationParameters
+                                                  .BackBufferHeight;
 
                                               _effect.Projection =
                                                   Matrix.CreateOrthographicOffCenter(0.0f,
@@ -146,8 +151,8 @@ public sealed class ImGuiRenderer
         io.DeltaTime   = deltaTime;
 
         // Update display size and scale.
-        int                    backBufferWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
-        int                    backBufferHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
+        int backBufferWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
+        int backBufferHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
         io.DisplaySize             = new Vector2(backBufferWidth, backBufferHeight);
         io.DisplayFramebufferScale = Vector2.One;
 
@@ -471,7 +476,7 @@ public sealed class ImGuiRenderer
     {
         int screenWidth  = graphicsDevice.PresentationParameters.BackBufferWidth;
         int screenHeight = graphicsDevice.PresentationParameters.BackBufferHeight;
-        
+
         return new BasicEffect(graphicsDevice)
                {
                    World = Matrix.Identity,
@@ -584,7 +589,7 @@ public sealed class ImGuiRenderer
 
         // Copy ImGui's vertices and indices to a set of managed byte arrays.
         int vertexOffset = 0;
-        int indexOffset = 0;
+        int indexOffset  = 0;
 
         for (int n = 0; n < drawData.CmdListsCount; n++)
         {
@@ -607,7 +612,7 @@ public sealed class ImGuiRenderer
             }
 
             vertexOffset += cmdList.VtxBuffer.Size;
-            indexOffset += cmdList.IdxBuffer.Size;
+            indexOffset  += cmdList.IdxBuffer.Size;
         }
 
         // Copy the managed byte arrays to the gpu vertex- and index buffers.
@@ -621,7 +626,7 @@ public sealed class ImGuiRenderer
         _graphicsDevice.Indices = _indexBuffer;
 
         int vertexOffset = 0;
-        int indexOffset = 0;
+        int indexOffset  = 0;
 
         for (int listIndex = 0; listIndex < drawData.CmdListsCount; listIndex++)
         {
@@ -635,7 +640,7 @@ public sealed class ImGuiRenderer
 
                 // In v1.92, we need to handle ImTextureRef instead of ImTextureID
                 ImTextureRef textureRef = drawCommand.TexRef;
-                ImTextureID  textureId      = textureRef.GetTexID();
+                ImTextureID  textureId  = textureRef.GetTexID();
 
                 TextureInfo textureInfo;
 
@@ -648,7 +653,8 @@ public sealed class ImGuiRenderer
                 _graphicsDevice.ScissorRectangle = new Rectangle((int)drawCommand.ClipRect.X,
                                                                  (int)drawCommand.ClipRect.Y,
                                                                  (int)(drawCommand.ClipRect.Z - drawCommand.ClipRect.X),
-                                                                 (int)(drawCommand.ClipRect.W - drawCommand.ClipRect.Y));
+                                                                 (int)(drawCommand.ClipRect.W -
+                                                                       drawCommand.ClipRect.Y));
 
                 _effect.Texture = textureInfo.Texture;
 
@@ -666,7 +672,7 @@ public sealed class ImGuiRenderer
             }
 
             vertexOffset += commandList.VtxBuffer.Size;
-            indexOffset += commandList.IdxBuffer.Size;
+            indexOffset  += commandList.IdxBuffer.Size;
         }
     }
 
