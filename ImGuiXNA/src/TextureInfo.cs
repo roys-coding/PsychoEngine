@@ -3,11 +3,7 @@
  * Modified by Roy Soriano
  */
 
-#region
-
 using Microsoft.Xna.Framework.Graphics;
-
-#endregion
 
 namespace ImGuiXNA;
 

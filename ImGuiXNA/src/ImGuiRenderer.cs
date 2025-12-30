@@ -5,8 +5,6 @@
 
 #define FNA
 
-#region
-
 using System.Runtime.InteropServices;
 using Hexa.NET.ImGui;
 using Hexa.NET.Utilities;
@@ -14,8 +12,6 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Vector2 = System.Numerics.Vector2;
-
-#endregion
 
 namespace ImGuiXNA;
 

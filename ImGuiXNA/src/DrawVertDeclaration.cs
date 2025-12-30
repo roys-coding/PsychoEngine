@@ -3,12 +3,8 @@
  * Modified by Roy Soriano
  */
 
-#region
-
 using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
-
-#endregion
 
 namespace ImGuiXNA;
 
