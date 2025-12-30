@@ -1,4 +1,6 @@
 ﻿using Hexa.NET.ImGui;
+using Microsoft.Xna.Framework.Input;
+using PsychoEngine.Input;
 
 namespace PsychoEngine;
 
@@ -6,7 +8,7 @@ public class CoreEngine : Game
 {
     public static CoreEngine Instance { get; private set; }
 
-    private readonly ImGuiManager          _imGuiManager;
+    public readonly ImGuiManager          ImGuiManager;
     private readonly GraphicsDeviceManager _deviceManager;
 
     public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
@@ -27,9 +29,9 @@ public class CoreEngine : Game
 
         Window.Title = windowTitle;
 
-        _imGuiManager = new ImGuiManager(this);
+        ImGuiManager = new ImGuiManager(this);
 
-        _imGuiManager.OnLayout += ImGuiOnLayout;
+        ImGuiManager.OnLayout     += ImGuiOnLayout;
     }
 
     private void ImGuiOnLayout(object? sender, EventArgs eventArgs)
@@ -42,12 +44,13 @@ public class CoreEngine : Game
 
     protected override void Initialize()
     {
-        _imGuiManager.Initialize(_deviceManager.GraphicsDevice);
+        ImGuiManager.Initialize(_deviceManager.GraphicsDevice);
         base.Initialize();
     }
 
     protected override void Update(GameTime gameTime)
     {
+        GameKeyboard.Update(this);
         base.Update(gameTime);
     }
 
@@ -55,14 +58,14 @@ public class CoreEngine : Game
     {
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
-        _imGuiManager.Draw(gameTime);
+        ImGuiManager.Draw(gameTime);
 
         base.Draw(gameTime);
     }
 
     protected override void UnloadContent()
     {
-        _imGuiManager.Terminate();
+        ImGuiManager.Terminate();
 
         base.UnloadContent();
     }
