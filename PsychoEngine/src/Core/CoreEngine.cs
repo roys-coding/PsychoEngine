@@ -14,7 +14,8 @@ public class CoreEngine : Game
         _deviceManager                           = new GraphicsDeviceManager(this);
         _deviceManager.PreferredBackBufferWidth  = windowWidth;
         _deviceManager.PreferredBackBufferHeight = windowHeight;
-        IsMouseVisible                           = true;
+        _deviceManager.SynchronizeWithVerticalRetrace = false;
+        IsMouseVisible                           = false;
         Window.AllowUserResizing                 = true;
 
         Window.Title   = windowTitle;
@@ -23,6 +24,10 @@ public class CoreEngine : Game
 
         _imGuiManager.OnLayout += (_, _) =>
                                   {
+                                      ImGuiDockNodeFlags dockFlags = ImGuiDockNodeFlags.PassthruCentralNode
+                                                                     | ImGuiDockNodeFlags.NoDockingOverCentralNode;
+                                      ImGui.DockSpaceOverViewport(dockFlags);
+                                      
                                       ImGui.ShowDemoWindow();
                                       ImGui.Text($"{Fonts.Lucide.Gamepad} Gamepad");
                                       ImGui.Text($"{Fonts.Lucide.Star} Star");

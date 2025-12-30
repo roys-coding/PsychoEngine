@@ -24,7 +24,18 @@ public class ImGuiManager
     {
         _renderer.Initialize();
 
-        ImGuiStylePtr style   = ImGui.GetStyle();
+        ImGuiIOPtr     io    = ImGui.GetIO();
+        ImGuiStylePtr  style = ImGui.GetStyle();
+        ImFontAtlasPtr fonts = ImGui.GetIO().Fonts;
+
+        #region ImGui config
+
+        io.ConfigFlags     |= ImGuiConfigFlags.DockingEnable;
+        io.ConfigFlags     |= ImGuiConfigFlags.NavEnableGamepad;
+        io.ConfigFlags     |= ImGuiConfigFlags.NavEnableKeyboard;
+        io.MouseDrawCursor =  true;
+
+        #endregion
 
         #region ImGui colors
 
@@ -38,11 +49,13 @@ public class ImGuiManager
         Vector4       medium2 = new(77  / 255f, 77  / 255f, 77  / 255f, 1.0f);
         Vector4       light0  = new(89  / 255f, 89  / 255f, 89  / 255f, 1.0f);
         Vector4       light1  = new(102 / 255f, 102 / 255f, 102 / 255f, 1.0f);
+        Vector4 highlight1 = new(166 / 255f, 98 / 255f, 255 / 255f, 1.0f);
+        
+        // Unused colors.
         // Vector4 light2 = new Vector4(115 / 255f, 115 / 255f, 115 / 255f, 1.0f);
         // Vector4 lighter = new Vector4(128 / 255f, 128 / 255f, 128 / 255f, 1.0f);
         // Vector4 lightest = new Vector4(153 / 255f, 153 / 255f, 153 / 255f, 1.0f);
         // Vector4 highlight0 = new Vector4(151 / 255f, 71 / 255f, 255 / 255f, 1.0f);
-        Vector4 highlight1 = new(166 / 255f, 98 / 255f, 255 / 255f, 1.0f);
         // Vector4 highlight2 = new Vector4(183 / 255f, 128 / 255f, 255 / 255f, 1.0f);
 
         Span<Vector4> colors = style.Colors;
@@ -178,9 +191,10 @@ public class ImGuiManager
         style.FramePadding         = new Vector2(10f, 6f);
         style.CellPadding          = new Vector2(6f,  6f);
         style.SeparatorTextPadding = new Vector2(12f, 6f);
+        style.TouchExtraPadding    = new  Vector2(4f, 4f);
         
         // Trees.
-        style.TreeLinesFlags = ImGuiTreeNodeFlags.DrawLinesFull;
+        style.TreeLinesFlags = ImGuiTreeNodeFlags.DrawLinesNone;
         style.TreeLinesSize  = 1f;
 
         // Spacing.
@@ -228,8 +242,6 @@ public class ImGuiManager
         #endregion
 
         #region ImGui fonts
-        
-        ImFontAtlasPtr fonts  = ImGui.GetIO().Fonts;
         GlyphRanges    iconsFontRanges = new(Fonts.Lucide.IconMin, Fonts.Lucide.IconMax, 0);
         
         // Base font config.
