@@ -1,37 +1,43 @@
 ﻿using Hexa.NET.ImGui;
-using ImGuiXNA;
-using Microsoft.Xna.Framework.Input;
 
 namespace PsychoEngine.Core;
 
 public class CoreEngine : Game
 {
+    public static CoreEngine Instance { get; private set; }
+
     private readonly ImGuiManager          _imGuiManager;
     private readonly GraphicsDeviceManager _deviceManager;
-    
+
     public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
     {
-        _deviceManager                           = new GraphicsDeviceManager(this);
-        _deviceManager.PreferredBackBufferWidth  = windowWidth;
-        _deviceManager.PreferredBackBufferHeight = windowHeight;
-        _deviceManager.SynchronizeWithVerticalRetrace = false;
-        IsMouseVisible                           = false;
-        Window.AllowUserResizing                 = true;
+        if (Instance is not null)
+        {
+            throw new InvalidOperationException("CoreEngine has already been initialized.");
+        }
 
-        Window.Title   = windowTitle;
-        
+        Instance = this;
+
+        _deviceManager                                = new GraphicsDeviceManager(this);
+        _deviceManager.PreferredBackBufferWidth       = windowWidth;
+        _deviceManager.PreferredBackBufferHeight      = windowHeight;
+        _deviceManager.SynchronizeWithVerticalRetrace = false;
+        IsMouseVisible                                = false;
+        Window.AllowUserResizing                      = true;
+
+        Window.Title = windowTitle;
+
         _imGuiManager = new ImGuiManager(this);
 
-        _imGuiManager.OnLayout += (_, _) =>
-                                  {
-                                      ImGuiDockNodeFlags dockFlags = ImGuiDockNodeFlags.PassthruCentralNode
-                                                                     | ImGuiDockNodeFlags.NoDockingOverCentralNode;
-                                      ImGui.DockSpaceOverViewport(dockFlags);
-                                      
-                                      ImGui.ShowDemoWindow();
-                                      ImGui.Text($"{Fonts.Lucide.Gamepad} Gamepad");
-                                      ImGui.Text($"{Fonts.Lucide.Star} Star");
-                                  };
+        _imGuiManager.OnLayout += ImGuiOnLayout;
+    }
+
+    private void ImGuiOnLayout(object? sender, EventArgs eventArgs)
+    {
+        const ImGuiDockNodeFlags dockFlags =
+            ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.NoDockingOverCentralNode;
+
+        ImGui.DockSpaceOverViewport(dockFlags);
     }
 
     protected override void Initialize()
@@ -50,10 +56,10 @@ public class CoreEngine : Game
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         _imGuiManager.Draw(gameTime);
-        
+
         base.Draw(gameTime);
     }
-    
+
     protected override void UnloadContent()
     {
         _imGuiManager.Terminate();
