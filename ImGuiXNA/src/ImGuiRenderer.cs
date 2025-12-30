@@ -21,7 +21,10 @@ public sealed class ImGuiRenderer
 
     private readonly Game           _game;
     private          GraphicsDevice _graphicsDevice;
-    private          float          _lastDeltaTime = float.Epsilon;
+    // Last delta-time is used if current delta-time is zero, to avoid crashes.
+    // Initialized to epsilon, so delta-time is not zero in the
+    // rare occassions where last delta-time is the first value used.
+    private          float          _previousDeltaTime = float.Epsilon;
 
     // Graphics resources.
     private readonly RasterizerState _rasterizerState;
@@ -48,6 +51,8 @@ public sealed class ImGuiRenderer
 #endif
     private int _scrollWheelValueY;
 
+    #region Life cycle
+    
     public ImGuiRenderer(Game game)
     {
         ArgumentNullException.ThrowIfNull(game);
@@ -66,11 +71,8 @@ public sealed class ImGuiRenderer
                            };
     }
 
-    #region Life cycle
-
     public void Initialize()
     {
-        // Create graphics resources.
         _graphicsDevice = _game.GraphicsDevice;
         _effect         = CreateEffect(_graphicsDevice);
 
@@ -141,9 +143,9 @@ public sealed class ImGuiRenderer
         float deltaTime = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
         // Delta time must be positive.
-        if (deltaTime <= 0f) deltaTime = _lastDeltaTime;
+        if (deltaTime <= 0f) deltaTime = _previousDeltaTime;
 
-        _lastDeltaTime = deltaTime;
+        _previousDeltaTime = deltaTime;
         io.DeltaTime   = deltaTime;
 
         // Update display size and scale.
@@ -161,56 +163,9 @@ public sealed class ImGuiRenderer
     {
         ImGui.Render();
 
-        if (_effect == null || _effect.IsDisposed)
-        {
-            _effect = CreateEffect(_graphicsDevice);
-        }
-
         ImDrawDataPtr drawData = ImGui.GetDrawData();
         ProcessTextureUpdates(drawData);
         RenderDrawData(drawData);
-    }
-
-    private void UpdateInput()
-    {
-        ImGuiIOPtr io = ImGui.GetIO();
-
-        if (io.AppFocusLost)
-        {
-            return;
-        }
-
-        MouseState    mouse    = Mouse.GetState();
-        KeyboardState keyboard = Keyboard.GetState();
-
-        io.AddMousePosEvent(mouse.X, mouse.Y);
-        io.AddMouseButtonEvent(0, mouse.LeftButton   == ButtonState.Pressed);
-        io.AddMouseButtonEvent(1, mouse.RightButton  == ButtonState.Pressed);
-        io.AddMouseButtonEvent(2, mouse.MiddleButton == ButtonState.Pressed);
-        io.AddMouseButtonEvent(3, mouse.XButton1     == ButtonState.Pressed);
-        io.AddMouseButtonEvent(4, mouse.XButton2     == ButtonState.Pressed);
-
-#if MONOGAME
-        float mouseWheelX = (mouse.HorizontalScrollWheelValue - _scrollWheelValueX) / WheelDelta;
-        float mouseWheelY = (mouse.ScrollWheelValue           - _scrollWheelValueY) / WheelDelta;
-        io.AddMouseWheelEvent(mouseWheelX, mouseWheelY);
-#endif
-
-#if FNA
-        float mouseWheelY = (mouse.ScrollWheelValue - _scrollWheelValueY) / WheelDelta;
-        io.AddMouseWheelEvent(0f, mouseWheelY);
-#endif
-
-        _scrollWheelValueY = mouse.ScrollWheelValue;
-
-        foreach (Keys key in _allKeys)
-        {
-            ImGuiKey imguiKey;
-
-            if (!TryMapKeys(key, out imguiKey)) continue;
-
-            io.AddKeyEvent(imguiKey, keyboard.IsKeyDown(key));
-        }
     }
 
     private static bool TryMapKeys(Keys key, out ImGuiKey imguiKey)
@@ -277,35 +232,46 @@ public sealed class ImGuiRenderer
         return imguiKey != ImGuiKey.None;
     }
 
-    #endregion
-
-    public unsafe ImTextureRef BindTexture(Texture2D texture)
+    private void UpdateInput()
     {
-        IntPtr texId = new(_nextTexId++);
+        ImGuiIOPtr io = ImGui.GetIO();
 
-        TextureInfo textureInfo = new()
-                                  {
-                                      Texture = texture, IsManaged = false,
-                                  };
+        if (io.AppFocusLost) return;
 
-        _textures[texId] = textureInfo;
+        MouseState    mouse    = Mouse.GetState();
+        KeyboardState keyboard = Keyboard.GetState();
 
-        return new ImTextureRef(null, texId);
-    }
+        io.AddMousePosEvent(mouse.X, mouse.Y);
+        io.AddMouseButtonEvent(0, mouse.LeftButton   == ButtonState.Pressed);
+        io.AddMouseButtonEvent(1, mouse.RightButton  == ButtonState.Pressed);
+        io.AddMouseButtonEvent(2, mouse.MiddleButton == ButtonState.Pressed);
+        io.AddMouseButtonEvent(3, mouse.XButton1     == ButtonState.Pressed);
+        io.AddMouseButtonEvent(4, mouse.XButton2     == ButtonState.Pressed);
 
-    public void UnbindTexture(ImTextureRef textureRef)
-    {
-        TextureInfo textureInfo;
+#if MONOGAME
+        float mouseWheelX = (mouse.HorizontalScrollWheelValue - _scrollWheelValueX) / WheelDelta;
+        float mouseWheelY = (mouse.ScrollWheelValue           - _scrollWheelValueY) / WheelDelta;
+        io.AddMouseWheelEvent(mouseWheelX, mouseWheelY);
+#endif
 
-        if (!_textures.TryGetValue(textureRef.TexID, out textureInfo)) return;
+#if FNA
+        float mouseWheelY = (mouse.ScrollWheelValue - _scrollWheelValueY) / WheelDelta;
+        io.AddMouseWheelEvent(0f, mouseWheelY);
+#endif
 
-        if (textureInfo.IsManaged)
+        _scrollWheelValueY = mouse.ScrollWheelValue;
+
+        foreach (Keys key in _allKeys)
         {
-            textureInfo.Texture?.Dispose();
-        }
+            ImGuiKey imguiKey;
 
-        _textures.Remove(textureRef.TexID);
+            if (!TryMapKeys(key, out imguiKey)) continue;
+
+            io.AddKeyEvent(imguiKey, keyboard.IsKeyDown(key));
+        }
     }
+
+    #endregion
 
     #region Setup
 
@@ -361,6 +327,38 @@ public sealed class ImGuiRenderer
                                       io.AddInputCharacter(c);
                                   };
 #endif
+    }
+
+    #endregion
+
+    #region Texture binding
+
+    public unsafe ImTextureRef BindTexture(Texture2D texture)
+    {
+        IntPtr texId = new(_nextTexId++);
+
+        TextureInfo textureInfo = new()
+                                  {
+                                      Texture = texture, IsManaged = false,
+                                  };
+
+        _textures[texId] = textureInfo;
+
+        return new ImTextureRef(null, texId);
+    }
+
+    public void UnbindTexture(ImTextureRef textureRef)
+    {
+        TextureInfo textureInfo;
+
+        if (!_textures.TryGetValue(textureRef.TexID, out textureInfo)) return;
+
+        if (textureInfo.IsManaged)
+        {
+            textureInfo.Texture?.Dispose();
+        }
+
+        _textures.Remove(textureRef.TexID);
     }
 
     #endregion
@@ -468,7 +466,7 @@ public sealed class ImGuiRenderer
 
     #region Rendering internals
 
-    private BasicEffect CreateEffect(GraphicsDevice graphicsDevice)
+    private static BasicEffect CreateEffect(GraphicsDevice graphicsDevice)
     {
         int screenWidth  = graphicsDevice.PresentationParameters.BackBufferWidth;
         int screenHeight = graphicsDevice.PresentationParameters.BackBufferHeight;
