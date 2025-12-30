@@ -239,72 +239,191 @@ public sealed class ImGuiXnaPlatform
 
         foreach (Keys key in _allKeys)
         {
-            ImGuiKey imguiKey;
+            ImGuiKey imguiKey = MapKey(key);
 
             // Skip unmapped keys.
-            if (!TryMapKeys(key, out imguiKey)) continue;
+            if (imguiKey == ImGuiKey.None) continue;
 
             io.AddKeyEvent(imguiKey, state.IsKeyDown(key));
         }
     }
 
-    private static bool TryMapKeys(Keys key, out ImGuiKey imguiKey)
+    private static ImGuiKey MapKey(Keys key)
     {
-        imguiKey = key switch
-                   {
-                       Keys.Back                           => ImGuiKey.Backspace,
-                       Keys.Tab                            => ImGuiKey.Tab,
-                       Keys.Enter                          => ImGuiKey.Enter,
-                       Keys.CapsLock                       => ImGuiKey.CapsLock,
-                       Keys.Escape                         => ImGuiKey.Escape,
-                       Keys.Space                          => ImGuiKey.Space,
-                       Keys.PageUp                         => ImGuiKey.PageUp,
-                       Keys.PageDown                       => ImGuiKey.PageDown,
-                       Keys.End                            => ImGuiKey.End,
-                       Keys.Home                           => ImGuiKey.Home,
-                       Keys.Left                           => ImGuiKey.LeftArrow,
-                       Keys.Right                          => ImGuiKey.RightArrow,
-                       Keys.Up                             => ImGuiKey.UpArrow,
-                       Keys.Down                           => ImGuiKey.DownArrow,
-                       Keys.PrintScreen                    => ImGuiKey.PrintScreen,
-                       Keys.Insert                         => ImGuiKey.Insert,
-                       Keys.Delete                         => ImGuiKey.Delete,
-                       >= Keys.D0 and <= Keys.D9           => ImGuiKey.Key0    + (key - Keys.D0),
-                       >= Keys.A and <= Keys.Z             => ImGuiKey.A       + (key - Keys.A),
-                       >= Keys.NumPad0 and <= Keys.NumPad9 => ImGuiKey.Keypad0 + (key - Keys.NumPad0),
-                       Keys.Multiply                       => ImGuiKey.KeypadMultiply,
-                       Keys.Add                            => ImGuiKey.KeypadAdd,
-                       Keys.Subtract                       => ImGuiKey.KeypadSubtract,
-                       Keys.Decimal                        => ImGuiKey.KeypadDecimal,
-                       Keys.Divide                         => ImGuiKey.KeypadDivide,
-                       >= Keys.F1 and <= Keys.F24          => ImGuiKey.F1 + (key - Keys.F1),
-                       Keys.NumLock                        => ImGuiKey.NumLock,
-                       Keys.Scroll                         => ImGuiKey.ScrollLock,
-                       Keys.LeftShift                      => ImGuiKey.LeftShift,
-                       Keys.RightShift                     => ImGuiKey.RightShift,
-                       Keys.LeftControl                    => ImGuiKey.LeftCtrl,
-                       Keys.RightControl                   => ImGuiKey.RightCtrl,
-                       Keys.LeftAlt                        => ImGuiKey.LeftAlt,
-                       Keys.RightAlt                       => ImGuiKey.RightAlt,
-                       Keys.LeftWindows                    => ImGuiKey.LeftSuper,
-                       Keys.RightWindows                   => ImGuiKey.RightSuper,
-                       Keys.OemSemicolon                   => ImGuiKey.Semicolon,
-                       Keys.OemPlus                        => ImGuiKey.Equal,
-                       Keys.OemComma                       => ImGuiKey.Comma,
-                       Keys.OemMinus                       => ImGuiKey.Minus,
-                       Keys.OemPeriod                      => ImGuiKey.Period,
-                       Keys.OemQuestion                    => ImGuiKey.Slash,
-                       Keys.OemTilde                       => ImGuiKey.GraveAccent,
-                       Keys.OemOpenBrackets                => ImGuiKey.LeftBracket,
-                       Keys.OemCloseBrackets               => ImGuiKey.RightBracket,
-                       Keys.OemPipe                        => ImGuiKey.Backslash,
-                       Keys.OemQuotes                      => ImGuiKey.Apostrophe,
-                       Keys.BrowserBack                    => ImGuiKey.AppBack,
-                       Keys.BrowserForward                 => ImGuiKey.AppForward,
-                       _                                   => ImGuiKey.None,
-                   };
-
-        return imguiKey != ImGuiKey.None;
+        switch (key)
+        {
+            // Basic.
+            case Keys.Tab:              return ImGuiKey.Tab;
+            case Keys.Enter:            return ImGuiKey.Enter;
+            case Keys.Escape:           return ImGuiKey.Escape;
+            case Keys.Space:            return ImGuiKey.Space;
+            case Keys.Back:             return ImGuiKey.Backspace;
+            case Keys.Insert:           return ImGuiKey.Insert;
+            case Keys.Delete:           return ImGuiKey.Delete;
+            case Keys.Home:             return ImGuiKey.Home;
+            case Keys.End:              return ImGuiKey.End;
+            case Keys.PageUp:           return ImGuiKey.PageUp;
+            case Keys.PageDown:         return ImGuiKey.PageDown;
+            case Keys.Pause:            return ImGuiKey.Pause;
+            case Keys.PrintScreen:      return ImGuiKey.PrintScreen;
+            case Keys.CapsLock:         return ImGuiKey.CapsLock;
+            case Keys.NumLock:          return ImGuiKey.NumLock;
+            case Keys.Scroll:           return ImGuiKey.ScrollLock;
+            // Arrows.
+            case Keys.Left:             return ImGuiKey.LeftArrow;
+            case Keys.Right:            return ImGuiKey.RightArrow;
+            case Keys.Up:               return ImGuiKey.UpArrow;
+            case Keys.Down:             return ImGuiKey.DownArrow;
+            // Modifiers.
+            case Keys.LeftShift:        return ImGuiKey.LeftShift;
+            case Keys.RightShift:       return ImGuiKey.RightShift;
+            case Keys.LeftControl:      return ImGuiKey.LeftCtrl;
+            case Keys.RightControl:     return ImGuiKey.RightCtrl;
+            case Keys.LeftAlt:          return ImGuiKey.LeftAlt;
+            case Keys.RightAlt:         return ImGuiKey.RightAlt;
+            case Keys.LeftWindows:      return ImGuiKey.LeftSuper;
+            case Keys.RightWindows:     return ImGuiKey.RightSuper;
+            case Keys.Apps:             return ImGuiKey.Menu;
+            // Digits.
+            case Keys.D0:               return ImGuiKey.Key0;
+            case Keys.D1:               return ImGuiKey.Key1;
+            case Keys.D2:               return ImGuiKey.Key2;
+            case Keys.D3:               return ImGuiKey.Key3;
+            case Keys.D4:               return ImGuiKey.Key4;
+            case Keys.D5:               return ImGuiKey.Key5;
+            case Keys.D6:               return ImGuiKey.Key6;
+            case Keys.D7:               return ImGuiKey.Key7;
+            case Keys.D8:               return ImGuiKey.Key8;
+            case Keys.D9:               return ImGuiKey.Key9;
+            // Letters.
+            case Keys.A:                return ImGuiKey.A;
+            case Keys.B:                return ImGuiKey.B;
+            case Keys.C:                return ImGuiKey.C;
+            case Keys.D:                return ImGuiKey.D;
+            case Keys.E:                return ImGuiKey.E;
+            case Keys.F:                return ImGuiKey.F;
+            case Keys.G:                return ImGuiKey.G;
+            case Keys.H:                return ImGuiKey.H;
+            case Keys.I:                return ImGuiKey.I;
+            case Keys.J:                return ImGuiKey.J;
+            case Keys.K:                return ImGuiKey.K;
+            case Keys.L:                return ImGuiKey.L;
+            case Keys.M:                return ImGuiKey.M;
+            case Keys.N:                return ImGuiKey.N;
+            case Keys.O:                return ImGuiKey.O;
+            case Keys.P:                return ImGuiKey.P;
+            case Keys.Q:                return ImGuiKey.Q;
+            case Keys.R:                return ImGuiKey.R;
+            case Keys.S:                return ImGuiKey.S;
+            case Keys.T:                return ImGuiKey.T;
+            case Keys.U:                return ImGuiKey.U;
+            case Keys.V:                return ImGuiKey.V;
+            case Keys.W:                return ImGuiKey.W;
+            case Keys.X:                return ImGuiKey.X;
+            case Keys.Y:                return ImGuiKey.Y;
+            case Keys.Z:                return ImGuiKey.Z;
+            // Function keys.
+            case Keys.F1:               return ImGuiKey.F1;
+            case Keys.F2:               return ImGuiKey.F2;
+            case Keys.F3:               return ImGuiKey.F3;
+            case Keys.F4:               return ImGuiKey.F4;
+            case Keys.F5:               return ImGuiKey.F5;
+            case Keys.F6:               return ImGuiKey.F6;
+            case Keys.F7:               return ImGuiKey.F7;
+            case Keys.F8:               return ImGuiKey.F8;
+            case Keys.F9:               return ImGuiKey.F9;
+            case Keys.F10:              return ImGuiKey.F10;
+            case Keys.F11:              return ImGuiKey.F11;
+            case Keys.F12:              return ImGuiKey.F12;
+            case Keys.F13:              return ImGuiKey.F13;
+            case Keys.F14:              return ImGuiKey.F14;
+            case Keys.F15:              return ImGuiKey.F15;
+            case Keys.F16:              return ImGuiKey.F16;
+            case Keys.F17:              return ImGuiKey.F17;
+            case Keys.F18:              return ImGuiKey.F18;
+            case Keys.F19:              return ImGuiKey.F19;
+            case Keys.F20:              return ImGuiKey.F20;
+            case Keys.F21:              return ImGuiKey.F21;
+            case Keys.F22:              return ImGuiKey.F22;
+            case Keys.F23:              return ImGuiKey.F23;
+            case Keys.F24:              return ImGuiKey.F24;
+            // Numpad.
+            case Keys.NumPad0:          return ImGuiKey.Keypad0;
+            case Keys.NumPad1:          return ImGuiKey.Keypad1;
+            case Keys.NumPad2:          return ImGuiKey.Keypad2;
+            case Keys.NumPad3:          return ImGuiKey.Keypad3;
+            case Keys.NumPad4:          return ImGuiKey.Keypad4;
+            case Keys.NumPad5:          return ImGuiKey.Keypad5;
+            case Keys.NumPad6:          return ImGuiKey.Keypad6;
+            case Keys.NumPad7:          return ImGuiKey.Keypad7;
+            case Keys.NumPad8:          return ImGuiKey.Keypad8;
+            case Keys.NumPad9:          return ImGuiKey.Keypad9;
+            case Keys.Add:              return ImGuiKey.KeypadAdd;
+            case Keys.Subtract:         return ImGuiKey.KeypadSubtract;
+            case Keys.Multiply:         return ImGuiKey.KeypadMultiply;
+            case Keys.Divide:           return ImGuiKey.KeypadDivide;
+            case Keys.Decimal:          return ImGuiKey.KeypadDecimal;
+            // OEM / punctuation.
+            case Keys.OemSemicolon:     return ImGuiKey.Semicolon;
+            case Keys.OemPlus:          return ImGuiKey.Equal;
+            case Keys.OemComma:         return ImGuiKey.Comma;
+            case Keys.OemMinus:         return ImGuiKey.Minus;
+            case Keys.OemPeriod:        return ImGuiKey.Period;
+            case Keys.OemQuestion:      return ImGuiKey.Slash;
+            case Keys.OemTilde:         return ImGuiKey.GraveAccent;
+            case Keys.OemOpenBrackets:  return ImGuiKey.LeftBracket;
+            case Keys.OemCloseBrackets: return ImGuiKey.RightBracket;
+            case Keys.OemPipe:          return ImGuiKey.Backslash;
+            case Keys.OemQuotes:        return ImGuiKey.Apostrophe;
+            // Browser.
+            case Keys.BrowserBack:        return ImGuiKey.AppBack;
+            case Keys.BrowserForward:     return ImGuiKey.AppForward;
+            // Unmapped.
+            case Keys.None:
+            case Keys.Select:
+            case Keys.Print:
+            case Keys.Execute:
+            case Keys.Help:
+            case Keys.Sleep:
+            case Keys.Separator:
+            case Keys.BrowserRefresh:
+            case Keys.BrowserStop:
+            case Keys.BrowserSearch:
+            case Keys.BrowserFavorites:
+            case Keys.BrowserHome:
+            case Keys.VolumeMute:
+            case Keys.VolumeDown:
+            case Keys.VolumeUp:
+            case Keys.MediaNextTrack:
+            case Keys.MediaPreviousTrack:
+            case Keys.MediaStop:
+            case Keys.MediaPlayPause:
+            case Keys.LaunchMail:
+            case Keys.SelectMedia:
+            case Keys.LaunchApplication1:
+            case Keys.LaunchApplication2:
+            case Keys.Oem8:
+            case Keys.OemBackslash:
+            case Keys.ProcessKey:
+            case Keys.Attn:
+            case Keys.Crsel:
+            case Keys.Exsel:
+            case Keys.EraseEof:
+            case Keys.Play:
+            case Keys.Zoom:
+            case Keys.Pa1:
+            case Keys.OemClear:
+            case Keys.ChatPadGreen:
+            case Keys.ChatPadOrange:
+            case Keys.ImeConvert:
+            case Keys.ImeNoConvert:
+            case Keys.Kana:
+            case Keys.Kanji:
+            case Keys.OemAuto:
+            case Keys.OemCopy:
+            case Keys.OemEnlW:
+            default:                      return ImGuiKey.None;
+        }
     }
 
     #endregion
