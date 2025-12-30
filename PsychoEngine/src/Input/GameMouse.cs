@@ -1,3 +1,3 @@
-﻿namespace PsychoEngine;
+﻿namespace PsychoEngine.Input;
 
 public sealed class GameMouse { }

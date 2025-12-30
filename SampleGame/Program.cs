@@ -1,4 +1,4 @@
-﻿using PsychoEngine.Core;
+﻿using PsychoEngine;
 
 namespace SampleGame;
 

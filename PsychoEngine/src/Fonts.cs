@@ -1,4 +1,4 @@
-﻿namespace PsychoEngine.Core;
+﻿namespace PsychoEngine;
 
 internal static class Fonts
 {

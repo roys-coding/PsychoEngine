@@ -1,6 +1,6 @@
 ﻿using Hexa.NET.ImGui;
 
-namespace PsychoEngine.Core;
+namespace PsychoEngine;
 
 public class CoreEngine : Game
 {
