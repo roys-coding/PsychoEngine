@@ -10,12 +10,14 @@ namespace ImGuiXNA;
 
 public sealed class ImGuiXnaPlatform
 {
-    private readonly Game           _game;
-    private          GraphicsDevice _graphicsDevice;
+    private readonly Game _game;
+
+    private GraphicsDevice _graphicsDevice;
+
     // Last delta-time is used if current delta-time is zero, to avoid crashes.
     // Initialized to epsilon, so delta-time is not zero in the
     // rare occasions where last delta-time is the first value used.
-    private float          _previousDeltaTime = float.Epsilon;
+    private float _previousDeltaTime = float.Epsilon;
 
     // Input.
     private readonly Keys[]        _allKeys          = Enum.GetValues<Keys>();
@@ -25,15 +27,15 @@ public sealed class ImGuiXnaPlatform
 #if MONOGAME
     private float _previousWheelValueX;
 #endif
-    private          float           _previousWheelValueY;
-    
+    private float _previousWheelValueY;
+
     // Input states.
-    private          MouseState      _previousMouseState;
-    private          KeyboardState   _previousKeyboardState;
-    private          TouchCollection _previousTouchState;
+    private MouseState      _previousMouseState;
+    private KeyboardState   _previousKeyboardState;
+    private TouchCollection _previousTouchState;
 
     #region Life cycle
-    
+
     public ImGuiXnaPlatform(Game game)
     {
         _game = game;
@@ -101,7 +103,17 @@ public sealed class ImGuiXnaPlatform
         io.DisplaySize             = new Vector2(backBufferWidth, backBufferHeight);
         io.DisplayFramebufferScale = Vector2.One;
 
-        UpdateInput();
+        UpdateInput(io);
+
+        ImGui.NewFrame();
+    }
+
+    private void UpdateInput(ImGuiIOPtr io)
+    {
+        io.AddFocusEvent(_game.IsActive);
+
+        // Do not update input if game is unfocused.
+        if (io.AppFocusLost) return;
 
         // Temporary solution to keyboard capturing.
         if (io.WantCaptureKeyboard)
@@ -112,19 +124,8 @@ public sealed class ImGuiXnaPlatform
         {
             TextInputEXT.StopTextInput();
         }
-        
+
         // TODO: Implement a correct solution for input capturing.
-
-        ImGui.NewFrame();
-    }
-
-    private void UpdateInput()
-    {
-        ImGuiIOPtr io = ImGui.GetIO();
-        
-        io.AddFocusEvent(_game.IsActive);
-
-        if (io.AppFocusLost) return;
 
         MouseState      mouse    = Mouse.GetState();
         TouchCollection touches  = TouchPanel.GetState();
@@ -172,6 +173,10 @@ public sealed class ImGuiXnaPlatform
     {
         const float wheelDelta = 120f;
 
+        if (_previousMouseState == state) return;
+
+        io.AddMouseSourceEvent(ImGuiMouseSource.Mouse);
+
         // Handle position.
         io.AddMousePosEvent(state.X, state.Y);
 
@@ -201,6 +206,10 @@ public sealed class ImGuiXnaPlatform
 
     private void HandleTouchScreen(ImGuiIOPtr io, TouchCollection state)
     {
+        if (state.Count == 0) return;
+
+        io.AddMouseSourceEvent(ImGuiMouseSource.TouchScreen);
+
         // Handle touch events.
         foreach (TouchLocation touch in state)
         {
@@ -214,10 +223,20 @@ public sealed class ImGuiXnaPlatform
                 case TouchLocationState.Invalid: break;
             }
         }
+
+        // TODO: Test touch input.
     }
 
     private void HandleKeyboard(ImGuiIOPtr io, KeyboardState state)
     {
+        if (_previousKeyboardState == state) return;
+
+        // Handle mod keys.
+        io.AddKeyEvent(ImGuiKey.ModShift, state.IsKeyDown(Keys.LeftShift)   || state.IsKeyDown(Keys.RightShift));
+        io.AddKeyEvent(ImGuiKey.ModCtrl,  state.IsKeyDown(Keys.LeftControl) || state.IsKeyDown(Keys.RightControl));
+        io.AddKeyEvent(ImGuiKey.ModAlt,   state.IsKeyDown(Keys.LeftAlt)     || state.IsKeyDown(Keys.RightAlt));
+        io.AddKeyEvent(ImGuiKey.ModSuper, state.IsKeyDown(Keys.LeftWindows) || state.IsKeyDown(Keys.RightWindows));
+
         foreach (Keys key in _allKeys)
         {
             ImGuiKey imguiKey;
@@ -231,16 +250,6 @@ public sealed class ImGuiXnaPlatform
 
     private static bool TryMapKeys(Keys key, out ImGuiKey imguiKey)
     {
-        // Special case not handled in the switch.
-        // If the actual key we put in is "None", return none and true;
-        // otherwise, return none and false.
-        if (key == Keys.None)
-        {
-            imguiKey = ImGuiKey.None;
-
-            return true;
-        }
-
         imguiKey = key switch
                    {
                        Keys.Back                           => ImGuiKey.Backspace,
@@ -271,9 +280,14 @@ public sealed class ImGuiXnaPlatform
                        >= Keys.F1 and <= Keys.F24          => ImGuiKey.F1 + (key - Keys.F1),
                        Keys.NumLock                        => ImGuiKey.NumLock,
                        Keys.Scroll                         => ImGuiKey.ScrollLock,
-                       Keys.LeftShift                      => ImGuiKey.ModShift,
-                       Keys.LeftControl                    => ImGuiKey.ModCtrl,
-                       Keys.LeftAlt                        => ImGuiKey.ModAlt,
+                       Keys.LeftShift                      => ImGuiKey.LeftShift,
+                       Keys.RightShift                     => ImGuiKey.RightShift,
+                       Keys.LeftControl                    => ImGuiKey.LeftCtrl,
+                       Keys.RightControl                   => ImGuiKey.RightCtrl,
+                       Keys.LeftAlt                        => ImGuiKey.LeftAlt,
+                       Keys.RightAlt                       => ImGuiKey.RightAlt,
+                       Keys.LeftWindows                    => ImGuiKey.LeftSuper,
+                       Keys.RightWindows                   => ImGuiKey.RightSuper,
                        Keys.OemSemicolon                   => ImGuiKey.Semicolon,
                        Keys.OemPlus                        => ImGuiKey.Equal,
                        Keys.OemComma                       => ImGuiKey.Comma,
