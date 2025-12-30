@@ -6,7 +6,7 @@ namespace PsychoEngine.Core;
 
 public class CoreEngine : Game
 {
-    private          ImGuiManager        _imGuiManager;
+    private readonly ImGuiManager          _imGuiManager;
     private readonly GraphicsDeviceManager _deviceManager;
     
     public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
@@ -20,6 +20,13 @@ public class CoreEngine : Game
         Window.Title   = windowTitle;
         
         _imGuiManager = new ImGuiManager(this);
+
+        _imGuiManager.OnLayout += (_, _) =>
+                                  {
+                                      ImGui.ShowDemoWindow();
+                                      ImGui.Text($"{Fonts.Lucide.Gamepad} Gamepad");
+                                      ImGui.Text($"{Fonts.Lucide.Star} Star");
+                                  };
     }
 
     protected override void Initialize()
@@ -31,14 +38,6 @@ public class CoreEngine : Game
     protected override void Update(GameTime gameTime)
     {
         base.Update(gameTime);
-        
-        KeyboardState keyboardState = Keyboard.GetState();
-
-        if (keyboardState.IsKeyDown(Keys.T))
-        {
-            _deviceManager.SynchronizeWithVerticalRetrace = !_deviceManager.SynchronizeWithVerticalRetrace;
-            _deviceManager.ApplyChanges();
-        }
     }
 
     protected override void Draw(GameTime gameTime)
