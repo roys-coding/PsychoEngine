@@ -13,9 +13,9 @@ public static class GameKeyboard
 
     public delegate void KeyboardEventHandler(object? sender, KeyboardEventArgs e);
 
-    public static event KeyboardEventHandler OnKeyPressed;
-    public static event KeyboardEventHandler OnKeyDown;
-    public static event KeyboardEventHandler OnKeyReleased;
+    public static event KeyboardEventHandler? OnKeyPressed;
+    public static event KeyboardEventHandler? OnKeyDown;
+    public static event KeyboardEventHandler? OnKeyReleased;
 
     public static readonly Keys[] AllKeys;
 
@@ -42,15 +42,16 @@ public static class GameKeyboard
 
         foreach (Keys key in AllKeys)
         {
-            InputState state     = GetKey(key);
+            KeyState state     = GetKey(key);
             string     keyString = $"{key}: {state}";
+
+            if (WasKeyPressed(key)) keyString += " Pressed";
+            if (WasKeyReleased(key)) keyString += " Released";
 
             switch (state)
             {
-                case InputState.Down:     ImGui.Text(keyString); break;
-                case InputState.Up:       ImGui.TextDisabled(keyString); break;
-                case InputState.Pressed:  ImGui.TextColored(new Vector4(1f, 0f, 0f, 1f), keyString); break;
-                case InputState.Released: ImGui.TextColored(new Vector4(0f, 1f, 0f, 1f), keyString); break;
+                case KeyState.Down:     ImGui.Text(keyString); break;
+                case KeyState.Up:       ImGui.TextDisabled(keyString); break;
             }
         }
 
@@ -64,58 +65,39 @@ public static class GameKeyboard
 
         foreach (Keys key in AllKeys)
         {
-            InputState state = GetKey(key);
-
-            switch (state)
-            {
-                case InputState.Pressed:  OnKeyPressed?.Invoke(null, new KeyboardEventArgs(key)); break;
-                case InputState.Down:     OnKeyDown?.Invoke(null, new KeyboardEventArgs(key)); break;
-                case InputState.Released: OnKeyReleased?.Invoke(null, new KeyboardEventArgs(key)); break;
-
-                case InputState.Up: 
-                default: break;
-            }
+            if (IsKeyDown(key)) OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
+            if (WasKeyPressed(key)) OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key));
+            if (WasKeyReleased(key)) OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key));
         }
     }
 
-    public static InputState GetKey(Keys key)
+    public static KeyState GetKey(Keys key)
     {
-        InputState state;
-
-        if (_currentState.IsKeyDown(key))
-        {
-            state = _previousState.IsKeyDown(key) ? InputState.Down : InputState.Pressed;
-        }
-        else
-        {
-            state = _previousState.IsKeyDown(key) ? InputState.Released : InputState.Up;
-        }
-
-        return state;
+        return _currentState[key];
     }
 
-    public static bool CheckKey(Keys key, InputState inputState)
+    public static bool CheckKey(Keys key, KeyState inputState)
     {
-        return GetKey(key) == inputState;
+        return _currentState[key] == inputState;
     }
 
     public static bool IsKeyUp(Keys key)
     {
-        return GetKey(key) == InputState.Up;
-    }
-
-    public static bool IsKeyPressed(Keys key)
-    {
-        return GetKey(key) == InputState.Pressed;
+        return _currentState[key] == KeyState.Up;
     }
 
     public static bool IsKeyDown(Keys key)
     {
-        return GetKey(key) == InputState.Down;
+        return _currentState[key] == KeyState.Down;
     }
 
-    public static bool IsKeyReleased(Keys key)
+    public static bool WasKeyPressed(Keys key)
     {
-        return GetKey(key) == InputState.Released;
+        return _previousState[key] == KeyState.Up && _currentState[key] == KeyState.Down;
+    }
+
+    public static bool WasKeyReleased(Keys key)
+    {
+        return _previousState[key] == KeyState.Down && _currentState[key] == KeyState.Up;
     }
 }
