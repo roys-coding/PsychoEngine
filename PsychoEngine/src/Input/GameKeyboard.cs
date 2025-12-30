@@ -1,6 +1,5 @@
 ﻿using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Input;
-using Vector4 = System.Numerics.Vector4;
 
 namespace PsychoEngine.Input;
 
@@ -21,6 +20,23 @@ public static class GameKeyboard
 
     private static KeyboardState _currentState;
     private static KeyboardState _previousState;
+    private static Keys[]?       _allKeysDown;
+    
+    public static Keys[] AllKeysDown
+    {
+        get
+        {
+            // Cache current frame's pressed keys.
+            _allKeysDown ??= _currentState.GetPressedKeys();
+
+            return _allKeysDown;
+        }
+    }
+    
+    public static bool ModShift => IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
+    public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
+    public static bool ModAlt => IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt);
+    public static bool ModSuper => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
 
     static GameKeyboard()
     {
@@ -62,7 +78,11 @@ public static class GameKeyboard
     {
         _previousState = _currentState;
         _currentState  = Keyboard.GetState();
+        
+        // Clear previous frame's cached pressed keys.
+        _allKeysDown   = null;
 
+        // Handle input handlers.
         foreach (Keys key in AllKeys)
         {
             if (IsKeyDown(key)) OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
