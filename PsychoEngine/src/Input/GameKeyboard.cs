@@ -5,12 +5,6 @@ namespace PsychoEngine.Input;
 
 public static class GameKeyboard
 {
-    // Subclasses.
-    public class KeyboardEventArgs(Keys key) : EventArgs
-    {
-        public Keys Key { get; } = key;
-    }
-
     // Events.
     public delegate void KeyboardEventHandler(object? sender, KeyboardEventArgs args);
 
@@ -18,14 +12,18 @@ public static class GameKeyboard
     public static event KeyboardEventHandler? OnKeyPressed;
     public static event KeyboardEventHandler? OnKeyReleased;
 
+    // Constants.
     public static readonly Keys[] AllKeys;
 
-    private static FocusLostInputBehaviour _focusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
+    // Config.
+    private static FocusLostInputBehaviour _focusLostInputBehaviour;
 
-    // Input state.
+    // Input states.
     private static KeyboardState _currentState;
     private static KeyboardState _previousState;
     private static Keys[]?       _allKeysDown;
+
+    public static TimeSpan LastInputTime { get; private set; }
 
     public static Keys[] AllKeysDown
     {
@@ -38,31 +36,14 @@ public static class GameKeyboard
         }
     }
 
-    public static TimeSpan LastInputTime
-    {
-        get;
-        private set;
-    }
+    // Key checks.
+    public static bool ModShift => IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
 
-    public static bool ModShift
-    {
-        get => IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
-    }
+    public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
 
-    public static bool ModControl
-    {
-        get => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
-    }
+    public static bool ModAlt => IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt);
 
-    public static bool ModAlt
-    {
-        get => IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt);
-    }
-
-    public static bool ModSuper
-    {
-        get => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
-    }
+    public static bool ModSuper => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
 
     static GameKeyboard()
     {
@@ -83,9 +64,9 @@ public static class GameKeyboard
         }
 
         int  focusLost                                 = (int)_focusLostInputBehaviour;
-        bool focusLostChanged                          = ImGui.DragInt("FocusLost", ref focusLost, 0, 1);
+        bool focusLostChanged                          = ImGui.DragInt("FocusLost", ref focusLost, 0, 2);
         if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
-        
+
         ImGui.TextDisabled($"Last input: {LastInputTime}");
 
         foreach (Keys key in AllKeys)
@@ -98,8 +79,15 @@ public static class GameKeyboard
 
             switch (state)
             {
-                case KeyState.Down: ImGui.Text(keyString); break;
-                case KeyState.Up:   ImGui.TextDisabled(keyString); break;
+                case KeyState.Down:
+                    ImGui.Text(keyString);
+
+                    break;
+
+                case KeyState.Up:
+                    ImGui.TextDisabled(keyString);
+
+                    break;
             }
         }
 
@@ -108,31 +96,41 @@ public static class GameKeyboard
 
     public static void Update(Game game, GameTime gameTime)
     {
-        if (!game.IsActive || ImGui.GetIO().WantCaptureKeyboard)
+        if (game.IsActive && !ImGui.GetIO().WantCaptureKeyboard)
+        {
+            // Update input state normally.
+            _previousState = _currentState;
+            _currentState  = Keyboard.GetState();
+        }
+        else
         {
             switch (_focusLostInputBehaviour)
             {
                 case FocusLostInputBehaviour.ClearState:
+                    // Pass an empty state, releasing all keys.
                     _previousState = _currentState;
                     _currentState  = default(KeyboardState);
-
                     break;
 
-                case FocusLostInputBehaviour.MaintainState: _previousState = _currentState; break;
+                case FocusLostInputBehaviour.MaintainState:
+                    // Maintain previous state, not releasing nor pressing any more keys.
+                    _previousState = _currentState;
+                    break;
+
+                case FocusLostInputBehaviour.KeepUpdating:
+                    // Update input state normally.
+                    _previousState = _currentState;
+                    _currentState  = Keyboard.GetState();
+                    break;
 
                 default:
                     throw new
                         InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
             }
         }
-        else
-        {
-            _previousState = _currentState;
-            _currentState  = Keyboard.GetState();
-        }
-        
+
         if (_previousState != _currentState)
-        { 
+        {
             LastInputTime = gameTime.TotalGameTime;
         }
 
