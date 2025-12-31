@@ -40,6 +40,8 @@ public class CoreEngine : Game
             ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.NoDockingOverCentralNode;
 
         ImGui.DockSpaceOverViewport(dockFlags);
+        
+        ImGui.ShowDemoWindow();
     }
 
     protected override void Initialize()
@@ -50,7 +52,9 @@ public class CoreEngine : Game
 
     protected override void Update(GameTime gameTime)
     {
-        GameKeyboard.Update(this);
+        GameKeyboard.Update(this, gameTime);
+        GameMouse.Update(this, gameTime);
+        
         base.Update(gameTime);
     }
 

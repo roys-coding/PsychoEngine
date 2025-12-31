@@ -7,13 +7,13 @@ public static class GameKeyboard
 {
     public class KeyboardEventArgs(Keys key) : EventArgs
     {
-        public readonly Keys Key = key;
+        public Keys Key { get; } = key;
     }
 
-    public delegate void KeyboardEventHandler(object? sender, KeyboardEventArgs e);
+    public delegate void KeyboardEventHandler(object? sender, KeyboardEventArgs args);
 
-    public static event KeyboardEventHandler? OnKeyPressed;
     public static event KeyboardEventHandler? OnKeyDown;
+    public static event KeyboardEventHandler? OnKeyPressed;
     public static event KeyboardEventHandler? OnKeyReleased;
 
     public static readonly Keys[] AllKeys;
@@ -33,6 +33,12 @@ public static class GameKeyboard
 
             return _allKeysDown;
         }
+    }
+
+    public static TimeSpan LastInputTime
+    {
+        get;
+        private set;
     }
 
     public static bool ModShift
@@ -64,7 +70,7 @@ public static class GameKeyboard
 
     private static void ImGuiOnLayout(object? sender, EventArgs args)
     {
-        bool windowOpen = ImGui.Begin($"{Fonts.Lucide.Keyboard} Input");
+        bool windowOpen = ImGui.Begin($"{Fonts.Lucide.Keyboard} Keyboard ");
 
         if (!windowOpen)
         {
@@ -76,6 +82,8 @@ public static class GameKeyboard
         int  focusLost                                 = (int)_focusLostInputBehaviour;
         bool focusLostChanged                          = ImGui.DragInt("FocusLost", ref focusLost, 0, 1);
         if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
+        
+        ImGui.TextDisabled($"Last input: {LastInputTime}");
 
         foreach (Keys key in AllKeys)
         {
@@ -95,7 +103,7 @@ public static class GameKeyboard
         ImGui.End();
     }
 
-    public static void Update(Game game)
+    public static void Update(Game game, GameTime gameTime)
     {
         if (!game.IsActive || ImGui.GetIO().WantCaptureKeyboard)
         {
@@ -108,6 +116,10 @@ public static class GameKeyboard
                     break;
 
                 case FocusLostInputBehaviour.MaintainState: _previousState = _currentState; break;
+
+                default:
+                    throw new
+                        InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
             }
         }
         else
@@ -116,6 +128,10 @@ public static class GameKeyboard
             _currentState  = Keyboard.GetState();
         }
         
+        if (_previousState != _currentState)
+        { 
+            LastInputTime = gameTime.TotalGameTime;
+        }
 
         // Clear previous frame's cached pressed keys.
         _allKeysDown = null;
