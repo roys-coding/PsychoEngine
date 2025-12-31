@@ -5,11 +5,13 @@ namespace PsychoEngine.Input;
 
 public static class GameKeyboard
 {
+    // Subclasses.
     public class KeyboardEventArgs(Keys key) : EventArgs
     {
         public Keys Key { get; } = key;
     }
 
+    // Events.
     public delegate void KeyboardEventHandler(object? sender, KeyboardEventArgs args);
 
     public static event KeyboardEventHandler? OnKeyDown;
@@ -20,6 +22,7 @@ public static class GameKeyboard
 
     private static FocusLostInputBehaviour _focusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
 
+    // Input state.
     private static KeyboardState _currentState;
     private static KeyboardState _previousState;
     private static Keys[]?       _allKeysDown;

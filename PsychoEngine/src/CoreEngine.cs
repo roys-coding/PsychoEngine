@@ -1,15 +1,17 @@
-﻿using Hexa.NET.ImGui;
-using Microsoft.Xna.Framework.Input;
+﻿using System.Diagnostics.CodeAnalysis;
+using Hexa.NET.ImGui;
 using PsychoEngine.Input;
 
 namespace PsychoEngine;
 
 public class CoreEngine : Game
 {
+    private readonly GraphicsDeviceManager _deviceManager;
+
+    [AllowNull]
     public static CoreEngine Instance { get; private set; }
 
-    public readonly ImGuiManager          ImGuiManager;
-    private readonly GraphicsDeviceManager _deviceManager;
+    public ImGuiManager ImGuiManager { get; }
 
     public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
     {
@@ -31,7 +33,7 @@ public class CoreEngine : Game
 
         ImGuiManager = new ImGuiManager(this);
 
-        ImGuiManager.OnLayout     += ImGuiOnLayout;
+        ImGuiManager.OnLayout += ImGuiOnLayout;
     }
 
     private void ImGuiOnLayout(object? sender, EventArgs eventArgs)
@@ -40,7 +42,7 @@ public class CoreEngine : Game
             ImGuiDockNodeFlags.PassthruCentralNode | ImGuiDockNodeFlags.NoDockingOverCentralNode;
 
         ImGui.DockSpaceOverViewport(dockFlags);
-        
+
         ImGui.ShowDemoWindow();
     }
 
@@ -54,7 +56,7 @@ public class CoreEngine : Game
     {
         GameKeyboard.Update(this, gameTime);
         GameMouse.Update(this, gameTime);
-        
+
         base.Update(gameTime);
     }
 
