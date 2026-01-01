@@ -3,11 +3,11 @@
 public readonly struct ButtonDragState
 {
     public Point LastPressPosition { get; }
-    public bool  Dragging          { get; }
+    public bool  IsDragging        { get; }
 
-    public ButtonDragState(Point lastPressPosition, bool dragging)
+    public ButtonDragState(Point lastPressPosition, bool isDragging)
     {
         LastPressPosition = lastPressPosition;
-        Dragging          = dragging;
+        IsDragging        = isDragging;
     }
 }

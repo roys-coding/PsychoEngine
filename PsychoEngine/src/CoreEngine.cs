@@ -55,7 +55,7 @@ public class CoreEngine : Game
     protected override void Update(GameTime gameTime)
     {
         GameKeyboard.Update(this, gameTime);
-        GameMouse.Update(this);
+        GameMouse.Update(this, gameTime);
 
         base.Update(gameTime);
     }

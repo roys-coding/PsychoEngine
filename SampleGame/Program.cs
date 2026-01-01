@@ -1,4 +1,5 @@
 ﻿using PsychoEngine;
+using PsychoEngine.Input;
 
 namespace SampleGame;
 

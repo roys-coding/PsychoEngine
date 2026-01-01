@@ -6,11 +6,9 @@ namespace PsychoEngine.Input;
 public static class GameKeyboard
 {
     // Events.
-    public delegate void KeyboardEventHandler(object? sender, KeyboardEventArgs args);
-
-    public static event KeyboardEventHandler? OnKeyDown;
-    public static event KeyboardEventHandler? OnKeyPressed;
-    public static event KeyboardEventHandler? OnKeyReleased;
+    public static event EventHandler<KeyboardEventArgs>? OnKeyDown;
+    public static event EventHandler<KeyboardEventArgs>? OnKeyPressed;
+    public static event EventHandler<KeyboardEventArgs>? OnKeyReleased;
 
     // Constants.
     public static readonly Keys[] AllKeys;
@@ -166,7 +164,7 @@ public static class GameKeyboard
         ImGui.End();
     }
 
-    public static void Update(Game game, GameTime gameTime)
+    internal static void Update(Game game, GameTime gameTime)
     {
         if (game.IsActive && !ImGui.GetIO().WantCaptureKeyboard)
         {

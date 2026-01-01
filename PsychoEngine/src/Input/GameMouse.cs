@@ -10,24 +10,19 @@ public static class GameMouse
     private const float WheelDeltaUnit = 120f;
 
     // Events.
-    public delegate void ButtonEventHandler(object?   sender, MouseButtonEventArgs   args);
-    public delegate void MovedEventHandler(object?    sender, MouseMovedEventArgs    args);
-    public delegate void ScrolledEventHandler(object? sender, MouseScrolledEventArgs args);
-    public delegate void DraggedEventHandler(object?  sender, MouseDraggedEventArgs  args);
+    public static event EventHandler<MouseButtonEventArgs>? OnButtonDown;
+    public static event EventHandler<MouseButtonEventArgs>? OnButtonPressed;
+    public static event EventHandler<MouseButtonEventArgs>? OnButtonReleased;
 
-    public static event ButtonEventHandler? OnButtonDown;
-    public static event ButtonEventHandler? OnButtonPressed;
-    public static event ButtonEventHandler? OnButtonReleased;
+    public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
+    public static event EventHandler<MouseScrolledEventArgs>? OnScrolled;
 
-    public static event MovedEventHandler?    OnMoved;
-    public static event ScrolledEventHandler? OnScrolled;
-
-    public static event DraggedEventHandler? OnDragStarted;
-    public static event DraggedEventHandler? OnDragging;
-    public static event DraggedEventHandler? OnDragReleased;
+    public static event EventHandler<MouseDraggedEventArgs>? OnDragStarted;
+    public static event EventHandler<MouseDraggedEventArgs>? OnDragging;
+    public static event EventHandler<MouseDraggedEventArgs>? OnDragReleased;
 
     // Constants.
-    public static readonly MouseButtons[] AllButtons;
+    private static readonly MouseButtons[] AllButtons;
 
     // Config.
     private const  int                     DragThreshold            = 5;
@@ -99,20 +94,20 @@ public static class GameMouse
 
     #region ImGui
 
-    private const  int          LogCapacity = 1000;
-    private static int          _frame;
-    private static bool         _ignoreDownEvent;
-    private static bool         _ignoreMovedEvent;
-    private static bool         _ignoreDraggingEvent;
-    private static List<string> _eventLog = new(LogCapacity);
+    private const           int          LogCapacity = 1000;
+    private static          int          _frame;
+    private static          bool         _ignoreDownEvent;
+    private static          bool         _ignoreMovedEvent;
+    private static          bool         _ignoreDraggingEvent;
+    private static readonly List<string> EventLog = new(LogCapacity);
 
     private static void ImGuiLog(string message)
     {
-        _eventLog.Add(message);
+        EventLog.Add(message);
 
-        if (_eventLog.Count >= LogCapacity)
+        if (EventLog.Count >= LogCapacity)
         {
-            _eventLog.RemoveAt(0);
+            EventLog.RemoveAt(0);
         }
     }
 
@@ -220,7 +215,7 @@ public static class GameMouse
             {
                 ButtonDragState dragState = GetButtonDragState(button);
                 Point           lastPress = dragState.LastPressPosition;
-                bool            dragging  = dragState.Dragging;
+                bool            dragging  = dragState.IsDragging;
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
@@ -261,11 +256,11 @@ public static class GameMouse
             ImGui.Checkbox("Ignore dragging event", ref _ignoreDraggingEvent);
 
             bool clearPressed = ImGui.Button("Clear");
-            if (clearPressed) _eventLog.Clear();
+            if (clearPressed) EventLog.Clear();
 
             ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle);
 
-            foreach (string message in _eventLog)
+            foreach (string message in EventLog)
             {
                 ImGui.Text(message);
             }
@@ -280,7 +275,7 @@ public static class GameMouse
 
     #endregion
 
-    public static void Update(Game game)
+    internal static void Update(Game game, GameTime gameTime)
     {
         UpdateMouseStates(game);
 
@@ -340,6 +335,11 @@ public static class GameMouse
     public static bool WasButtonReleased(MouseButtons button)
     {
         return GetButtonState(button).HasFlag(InputStates.Released);
+    }
+
+    public static bool IsButtonDragging(MouseButtons button)
+    {
+        return GetButtonDragState(button).IsDragging;
     }
 
     private static void UpdateMouseStates(Game game)
@@ -437,7 +437,7 @@ public static class GameMouse
         ButtonDragState buttonDragState = GetButtonDragState(button);
 
         Point lastPressPosition = buttonDragState.LastPressPosition;
-        bool  dragging          = buttonDragState.Dragging;
+        bool  dragging          = buttonDragState.IsDragging;
 
         if (WasButtonPressed(button))
         {
