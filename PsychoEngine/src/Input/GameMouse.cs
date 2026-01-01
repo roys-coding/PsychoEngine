@@ -1,79 +1,106 @@
 ﻿using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Input;
+using PsychoEngine.Utils;
 
 namespace PsychoEngine.Input;
 
 public static class GameMouse
-{
-    // Events.
-    public delegate void MouseButtonEventHandler(object? sender, MouseButtonEventArgs args);
-    public delegate void MouseEventHandler(object?       sender, MouseEventArgs       args);
+{ 
+    // Constants.
+    private const float WheelDeltaUnit = 120f;
 
-    public static event MouseButtonEventHandler? OnMouseButtonDown;
-    public static event MouseButtonEventHandler? OnMouseButtonPressed;
-    public static event MouseButtonEventHandler? OnMouseButtonReleased;
-    
-    public static event MouseEventHandler?    OnMouseMoved;
-    public static event MouseEventHandler? OnMouseScrolled;
+    // Events.
+    public delegate void ButtonEventHandler(object?   sender, MouseButtonEventArgs   args);
+    public delegate void MovedEventHandler(object?    sender, MouseMovedEventArgs    args);
+    public delegate void ScrolledEventHandler(object? sender, MouseScrolledEventArgs args);
+    public delegate void DraggedEventHandler(object?  sender, MouseDraggedEventArgs  args);
+
+    public static event ButtonEventHandler? OnButtonDown;
+    public static event ButtonEventHandler? OnButtonPressed;
+    public static event ButtonEventHandler? OnButtonReleased;
+
+    public static event MovedEventHandler?    OnMoved;
+    public static event ScrolledEventHandler? OnScrolled;
+
+    public static event DraggedEventHandler? OnDragStarted;
+    public static event DraggedEventHandler? OnDragging;
+    public static event DraggedEventHandler? OnDragReleased;
 
     // Constants.
     public static readonly MouseButtons[] AllButtons;
 
     // Config.
+    private const  int                     DragThreshold            = 5;
     private static FocusLostInputBehaviour _focusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
 
-    // Input states.
-    private static MouseState    _previousState;
-    private static MouseState    _currentState;
-    private static MouseSnapshot _currentSnapshot;
+    // Mouse states.
+    private static MouseState _previousState;
+    private static MouseState _currentState;
 
-    // Button checks.
-    public static ButtonState LeftButton   => _currentSnapshot.GetButton(MouseButtons.Left);
-    public static ButtonState MiddleButton => _currentSnapshot.GetButton(MouseButtons.Middle);
-    public static ButtonState RightButton  => _currentSnapshot.GetButton(MouseButtons.Right);
-    public static ButtonState X1Button     => _currentSnapshot.GetButton(MouseButtons.X1);
-    public static ButtonState X2Button     => _currentSnapshot.GetButton(MouseButtons.X2);
+    // Button states.
+    private static InputStates _leftButton;
+    private static InputStates _middleButton;
+    private static InputStates _rightButton;
+    private static InputStates _x1Button;
+    private static InputStates _x2Button;
+
+    private static ButtonDragState _leftButtonDrag;
+    private static ButtonDragState _middleButtonDrag;
+    private static ButtonDragState _rightButtonDrag;
+    private static ButtonDragState _x1ButtonDrag;
+    private static ButtonDragState _x2ButtonDrag;
 
     // Position.
-    public static Point PreviousPosition => _currentSnapshot.PreviousPosition;
-    public static Point Position         => _currentSnapshot.Position;
-    public static Point PositionDelta    => _currentSnapshot.PositionDelta;
-    public static bool  HasMoved         => _currentSnapshot.HasMoved;
+    public static Point PreviousPosition { get; private set; }
+    public static Point Position         { get; private set; }
+    public static Point PositionDelta    { get; private set; }
+    public static bool  Moved            { get; private set; }
 
     // Scroll wheel.
-    public static float PreviousScrollValue => _currentSnapshot.PreviousScrollValue;
-    public static float ScrollValue         => _currentSnapshot.ScrollValue;
-    public static float ScrollDelta         => _currentSnapshot.ScrollDelta;
-    public static bool  HasScrolled         => _currentSnapshot.HasScrolled;
+    public static float PreviousScrollValue { get; private set; }
+    public static float ScrollValue         { get; private set; }
+    public static float ScrollDelta         { get; private set; }
+    public static bool  Scrolled            { get; private set; }
 
     static GameMouse()
     {
         AllButtons = Enum.GetValues<MouseButtons>();
 
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
-        
-        OnMouseButtonPressed  += (sender, args) => ImGuiLog($"{_frame}: Pressed {args.Button}");
-        OnMouseButtonReleased += (sender, args) => ImGuiLog($"{_frame}: Released {args.Button}");
-        OnMouseScrolled       += (sender, args) => ImGuiLog($"{_frame}: Scrolled {args.State.ScrollDelta}");
 
-        OnMouseMoved += (sender, args) =>
+        OnButtonPressed  += (_, args) => ImGuiLog($"{_frame}: Pressed {args.Button}");
+        OnButtonReleased += (_, args) => ImGuiLog($"{_frame}: Released {args.Button}");
+        OnScrolled       += (_, args) => ImGuiLog($"{_frame}: Scrolled {args.ScrollDelta}");
+        OnDragStarted    += (_, args) => ImGuiLog($"{_frame}: Drag started {args.Button}, {args.DragStartPosition}");
+        OnDragReleased   += (_, args) => ImGuiLog($"{_frame}: Drag released {args.Button}, {args.DragStartPosition}");
+
+        OnMoved += (_, args) =>
+                   {
+                       if (_ignoreMovedEvent) return;
+                       ImGuiLog($"{_frame}: Moved {args.MouseState.Position} Delta {args.MouseState.PositionDelta}");
+                   };
+
+        OnDragging += (_, args) =>
+                      {
+                          if (_ignoreDraggingEvent) return;
+                          ImGuiLog($"{_frame}: Dragging {args.Button}, {args.DragStartPosition}");
+                      };
+
+        OnButtonDown += (_, args) =>
                         {
-                            if (_ignoreMovedEvent) return;
-                            ImGuiLog($"{_frame}: Moved {args.State.Position} Delta {args.State.PositionDelta}");
+                            if (_ignoreDownEvent) return;
+                            ImGuiLog($"{_frame}: Down {args.Button}");
                         };
-        
-        OnMouseButtonDown     += (sender, args) =>
-                                 {
-                                     if (_ignoreDownEvent) return;
-                                     ImGuiLog($"{_frame}: Down {args.Button}");
-                                 };
     }
-    
-    private const  int          LogCapacity       = 1000;
-    private static int          _frame            = 0;
-    private static bool         _ignoreDownEvent  = false;
-    private static bool         _ignoreMovedEvent = false;
-    private static List<string> _eventLog         = new(LogCapacity);
+
+    #region ImGui
+
+    private const  int          LogCapacity = 1000;
+    private static int          _frame;
+    private static bool         _ignoreDownEvent;
+    private static bool         _ignoreMovedEvent;
+    private static bool         _ignoreDraggingEvent;
+    private static List<string> _eventLog = new(LogCapacity);
 
     private static void ImGuiLog(string message)
     {
@@ -105,24 +132,24 @@ public static class GameMouse
 
         if (movementHeader)
         {
-            bool hasMoved = HasMoved;
-            
+            bool hasMoved = Moved;
+
             ImGui.Text($"Position: {Position}");
             ImGui.Text($"PrevPos: {PreviousPosition}");
             ImGui.Text($"PosDelta: {PositionDelta}");
-            ImGui.Checkbox($"HasMoved", ref hasMoved);
+            ImGui.Checkbox("HasMoved", ref hasMoved);
         }
-        
+
         bool scrollHeader = ImGui.CollapsingHeader("Scroll");
 
         if (scrollHeader)
         {
-            bool hasScrolled = HasScrolled;
-            
+            bool hasScrolled = Scrolled;
+
             ImGui.Text($"Scroll: {ScrollValue}");
             ImGui.Text($"PrevScroll: {PreviousScrollValue}");
             ImGui.Text($"ScrollDelta: {ScrollDelta}");
-            ImGui.Checkbox($"HasScrolled", ref hasScrolled);
+            ImGui.Checkbox("HasScrolled", ref hasScrolled);
         }
 
         bool buttonsHeader = ImGui.CollapsingHeader("Buttons");
@@ -136,17 +163,16 @@ public static class GameMouse
             ImGui.TableSetupColumn("Pressed");
             ImGui.TableSetupColumn("Released");
             ImGui.TableHeadersRow();
-            
+
             foreach (MouseButtons button in AllButtons)
             {
-                ButtonState state = GetButton(button);
-                bool pressed      = WasButtonPressed(button);
-                bool released     = WasButtonReleased(button);
-            
+                bool pressed  = WasButtonPressed(button);
+                bool released = WasButtonReleased(button);
+
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                if (state == ButtonState.Pressed)
+                if (IsButtonDown(button))
                 {
                     ImGui.Text(button.ToString());
                 }
@@ -154,23 +180,71 @@ public static class GameMouse
                 {
                     ImGui.TextDisabled(button.ToString());
                 }
-                
+
                 ImGui.TableNextColumn();
-                
-                if (state == ButtonState.Pressed)
+
+                if (IsButtonDown(button))
                 {
-                    ImGui.Text(state.ToString());
+                    ImGui.Text("Down");
                 }
                 else
                 {
-                    ImGui.TextDisabled(state.ToString());
+                    ImGui.TextDisabled("Up");
                 }
-                
+
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}pressed", ref pressed);
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}released", ref released);
             }
+
+            ImGui.EndTable();
+        }
+
+        bool dragHeader = ImGui.CollapsingHeader("Drag");
+
+        if (dragHeader)
+        {
+            const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
+            ImGui.BeginTable("Drag", 3, flags);
+            ImGui.TableSetupColumn("Button");
+            ImGui.TableSetupColumn("LastPress");
+            ImGui.TableSetupColumn("Dragging");
+            ImGui.TableHeadersRow();
+
+            foreach (MouseButtons button in AllButtons)
+            {
+                ButtonDragState dragState = GetButtonDragState(button);
+                Point           lastPress = dragState.LastPressPosition;
+                bool            dragging  = dragState.Dragging;
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+
+                if (dragging)
+                {
+                    ImGui.Text(button.ToString());
+                }
+                else
+                {
+                    ImGui.TextDisabled(button.ToString());
+                }
+
+                ImGui.TableNextColumn();
+
+                if (dragging)
+                {
+                    ImGui.Text(lastPress.ToString());
+                }
+                else
+                {
+                    ImGui.TextDisabled(lastPress.ToString());
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.Checkbox($"##{button}dragging", ref dragging);
+            }
+
             ImGui.EndTable();
         }
 
@@ -178,127 +252,311 @@ public static class GameMouse
 
         if (eventLogHeader)
         {
-            ImGui.Checkbox("Ignore down event", ref _ignoreDownEvent);
-            ImGui.Checkbox("Ignore move event", ref _ignoreMovedEvent);
-            
+            ImGui.Checkbox("Ignore down event",     ref _ignoreDownEvent);
+            ImGui.Checkbox("Ignore move event",     ref _ignoreMovedEvent);
+            ImGui.Checkbox("Ignore dragging event", ref _ignoreDraggingEvent);
+
             bool clearPressed = ImGui.Button("Clear");
             if (clearPressed) _eventLog.Clear();
-            
+
             ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle);
-            
+
             foreach (string message in _eventLog)
             {
                 ImGui.Text(message);
             }
+
             ImGui.SetScrollHereY();
-            
+
             ImGui.EndChild();
         }
 
         ImGui.End();
     }
 
-    public static void Update(Game game, GameTime gameTime)
+    #endregion
+
+    public static void Update(Game game)
+    {
+        UpdateMouseStates(game);
+
+        /* TODO: Last input time detection */
+
+        // Position.
+        PreviousPosition = new Point(_previousState.X, _previousState.Y);
+        Position         = new Point(_currentState.X,  _currentState.Y);
+        PositionDelta    = Position - PreviousPosition;
+        Moved            = PositionDelta != Point.Zero;
+
+        // Scroll.
+        PreviousScrollValue = _previousState.ScrollWheelValue / WheelDeltaUnit;
+        ScrollValue         = _currentState.ScrollWheelValue  / WheelDeltaUnit;
+        ScrollDelta         = ScrollValue - PreviousScrollValue;
+        Scrolled            = ScrollDelta != 0f;
+
+        // Dragging.
+        foreach (MouseButtons button in AllButtons)
+        {
+            UpdateButtonInputState(button);
+            UpdateButtonDragState(button);
+        }
+
+        if (Moved)
+        {
+            OnMoved?.Invoke(null,
+                            new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta, GetSnapshot()));
+        }
+
+        if (Scrolled)
+        {
+            OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, GetSnapshot()));
+        }
+    }
+
+    public static InputStates GetButton(MouseButtons button)
+    {
+        return GetButtonState(button);
+    }
+
+    public static bool IsButtonUp(MouseButtons button)
+    {
+        return GetButtonState(button).HasFlag(InputStates.Up);
+    }
+
+    public static bool IsButtonDown(MouseButtons button)
+    {
+        return GetButtonState(button).HasFlag(InputStates.Down);
+    }
+
+    public static bool WasButtonPressed(MouseButtons button)
+    {
+        return GetButtonState(button).HasFlag(InputStates.Pressed);
+    }
+
+    public static bool WasButtonReleased(MouseButtons button)
+    {
+        return GetButtonState(button).HasFlag(InputStates.Released);
+    }
+
+    private static void UpdateMouseStates(Game game)
     {
         if (game.IsActive && !ImGui.GetIO().WantCaptureMouse)
         {
             // Update input state normally.
             _previousState = _currentState;
             _currentState  = Mouse.GetState();
+
+            return;
         }
-        else
+
+        switch (_focusLostInputBehaviour)
         {
-            switch (_focusLostInputBehaviour)
+            case FocusLostInputBehaviour.ClearState:
+                // Pass an empty state, releasing all buttons.
+                // We only retain the last position and scroll value.
+                _previousState = _currentState;
+
+                _currentState = new MouseState(_previousState.X,
+                                               _previousState.Y,
+                                               _previousState.ScrollWheelValue,
+                                               ButtonState.Released,
+                                               ButtonState.Released,
+                                               ButtonState.Released,
+                                               ButtonState.Released,
+                                               ButtonState.Released);
+
+                break;
+
+            case FocusLostInputBehaviour.MaintainState:
+                // Maintain previous state, not releasing nor pressing any more buttons.
+                _previousState = _currentState;
+                break;
+
+            case FocusLostInputBehaviour.KeepUpdating:
+                // Update input state normally.
+                _previousState = _currentState;
+                _currentState  = Mouse.GetState();
+                break;
+
+            default:
+                throw new
+                    InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
+        }
+    }
+
+    private static void UpdateButtonInputState(MouseButtons button)
+    {
+        ButtonState previousState = _previousState.GetButton(button);
+        ButtonState currentState  = _currentState.GetButton(button);
+
+        InputStates inputState = InputStates.None;
+
+        switch (currentState)
+        {
+            case ButtonState.Pressed:
             {
-                case FocusLostInputBehaviour.ClearState:
-                    // Pass an empty state, releasing all buttons.
-                    // We only retain the last position and scroll value.
-                    _previousState = _currentState;
+                // Button is currently pressed.
+                inputState |= InputStates.Down;
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
 
-                    _currentState = new MouseState(_previousState.X,
-                                                   _previousState.Y,
-                                                   _previousState.ScrollWheelValue,
-                                                   ButtonState.Released,
-                                                   ButtonState.Released,
-                                                   ButtonState.Released,
-                                                   ButtonState.Released,
-                                                   ButtonState.Released);
+                if (previousState == ButtonState.Released)
+                {
+                    // Button was just pressed.
+                    inputState |= InputStates.Pressed;
+                    OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+                }
 
-                    break;
+                break;
+            }
 
-                case FocusLostInputBehaviour.MaintainState:
-                    // Maintain previous state, not releasing nor pressing any more buttons.
-                    _previousState = _currentState;
-                    break;
+            case ButtonState.Released:
+                // Button is currently not pressed.
+                inputState |= InputStates.Up;
 
-                case FocusLostInputBehaviour.KeepUpdating:
-                    // Update input state normally.
-                    _previousState = _currentState;
-                    _currentState  = Mouse.GetState();
-                    break;
+                if (previousState == ButtonState.Pressed)
+                {
+                    // Button was just released.
+                    inputState |= InputStates.Released;
+                    OnButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+                }
 
-                default:
-                    throw new
-                        InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
+                break;
+
+            default: throw new InvalidOperationException($"InputState '{currentState}' not supported.");
+        }
+
+        SetButtonStateInternal(button, inputState);
+    }
+
+    private static void UpdateButtonDragState(MouseButtons button)
+    {
+        ButtonDragState buttonDragState = GetButtonDragState(button);
+
+        Point lastPressPosition = buttonDragState.LastPressPosition;
+        bool  dragging          = buttonDragState.Dragging;
+
+        if (WasButtonPressed(button))
+        {
+            lastPressPosition = Position;
+        }
+
+        if (WasButtonReleased(button) && dragging)
+        {
+            // Button stopped dragging.
+            dragging = false;
+            OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, lastPressPosition, GetSnapshot()));
+        }
+
+        if (IsButtonDown(button) && !dragging)
+        {
+            float distance = lastPressPosition.Distance(Position);
+
+            if (distance > DragThreshold)
+            {
+                // Button began dragging.
+                dragging = true;
+                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, lastPressPosition, GetSnapshot()));
             }
         }
 
-        _currentSnapshot = new MouseSnapshot(_previousState, _currentState);
-
-        /* TODO: Last input time detection */
-
-        if (HasMoved)
+        if (dragging)
         {
-            OnMouseMoved?.Invoke(null, new MouseEventArgs(_currentSnapshot));
+            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, lastPressPosition, GetSnapshot()));
         }
 
-        if (HasScrolled)
+        SetButtonDragState(button, new ButtonDragState(lastPressPosition, dragging));
+    }
+
+    private static InputStates GetButtonState(MouseButtons button)
+    {
+        return button switch
+               {
+                   MouseButtons.None   => InputStates.None,
+                   MouseButtons.Left   => _leftButton,
+                   MouseButtons.Middle => _middleButton,
+                   MouseButtons.Right  => _rightButton,
+                   MouseButtons.X1     => _x1Button,
+                   MouseButtons.X2     => _x2Button,
+                   _                   => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
+               };
+    }
+
+    private static void SetButtonStateInternal(MouseButtons button, InputStates state)
+    {
+        switch (button)
         {
-            OnMouseScrolled?.Invoke(null, new MouseEventArgs(_currentSnapshot));
-        }
+            case MouseButtons.None: break;
 
-        // Handle buttons.
-        foreach (MouseButtons button in AllButtons)
+            case MouseButtons.Left:
+                _leftButton = state;
+                break;
+
+            case MouseButtons.Middle:
+                _middleButton = state;
+                break;
+
+            case MouseButtons.Right:
+                _rightButton = state;
+                break;
+
+            case MouseButtons.X1:
+                _x1Button = state;
+                break;
+
+            case MouseButtons.X2:
+                _x2Button = state;
+                break;
+
+            default: throw new InvalidOperationException($"MouseButton '{button}' not supported.");
+        }
+    }
+
+    private static ButtonDragState GetButtonDragState(MouseButtons button)
+    {
+        return button switch
+               {
+                   MouseButtons.None   => default(ButtonDragState),
+                   MouseButtons.Left   => _leftButtonDrag,
+                   MouseButtons.Middle => _middleButtonDrag,
+                   MouseButtons.Right  => _rightButtonDrag,
+                   MouseButtons.X1     => _x1ButtonDrag,
+                   MouseButtons.X2     => _x2ButtonDrag,
+                   _                   => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
+               };
+    }
+
+    private static void SetButtonDragState(MouseButtons button, ButtonDragState state)
+    {
+        switch (button)
         {
-            if (IsButtonDown(button))
-            {
-                OnMouseButtonDown?.Invoke(null, new MouseButtonEventArgs(button, _currentSnapshot));
-            }
+            case MouseButtons.None: break;
 
-            if (WasButtonPressed(button))
-            {
-                OnMouseButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, _currentSnapshot));
-            }
+            case MouseButtons.Left:
+                _leftButtonDrag = state;
+                break;
 
-            if (WasButtonReleased(button))
-            {
-                OnMouseButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, _currentSnapshot));
-            }
+            case MouseButtons.Middle:
+                _middleButtonDrag = state;
+                break;
+
+            case MouseButtons.Right:
+                _rightButtonDrag = state;
+                break;
+
+            case MouseButtons.X1:
+                _x1ButtonDrag = state;
+                break;
+
+            case MouseButtons.X2:
+                _x2ButtonDrag = state;
+                break;
+
+            default: throw new InvalidOperationException($"MouseButton '{button}' not supported.");
         }
     }
 
-    public static ButtonState GetButton(MouseButtons button)
+    private static MouseSnapshot GetSnapshot()
     {
-        return _currentSnapshot.GetButton(button);
-    }
-
-    public static bool IsButtonUp(MouseButtons button)
-    {
-        return _currentSnapshot.IsButtonUp(button);
-    }
-
-    public static bool IsButtonDown(MouseButtons button)
-    {
-        return _currentSnapshot.IsButtonDown(button);
-    }
-
-    public static bool WasButtonPressed(MouseButtons button)
-    {
-        return _currentSnapshot.WasButtonPressed(button);
-    }
-
-    public static bool WasButtonReleased(MouseButtons button)
-    {
-        return _currentSnapshot.WasButtonReleased(button);
+        return default(MouseSnapshot);
     }
 }
