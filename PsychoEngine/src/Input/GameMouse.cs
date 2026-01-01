@@ -12,8 +12,6 @@ public static class GameMouse
     public static event MouseButtonEventHandler? OnMouseButtonDown;
     public static event MouseButtonEventHandler? OnMouseButtonPressed;
     public static event MouseButtonEventHandler? OnMouseButtonReleased;
-
-    // TODO: Add specific event arguments for each event.
     
     public static event MouseEventHandler?    OnMouseMoved;
     public static event MouseEventHandler? OnMouseScrolled;
@@ -53,10 +51,43 @@ public static class GameMouse
         AllButtons = Enum.GetValues<MouseButtons>();
 
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+        
+        OnMouseButtonPressed  += (sender, args) => ImGuiLog($"{_frame}: Pressed {args.Button}");
+        OnMouseButtonReleased += (sender, args) => ImGuiLog($"{_frame}: Released {args.Button}");
+        OnMouseScrolled       += (sender, args) => ImGuiLog($"{_frame}: Scrolled {args.State.ScrollDelta}");
+
+        OnMouseMoved += (sender, args) =>
+                        {
+                            if (_ignoreMovedEvent) return;
+                            ImGuiLog($"{_frame}: Moved {args.State.Position} Delta {args.State.PositionDelta}");
+                        };
+        
+        OnMouseButtonDown     += (sender, args) =>
+                                 {
+                                     if (_ignoreDownEvent) return;
+                                     ImGuiLog($"{_frame}: Down {args.Button}");
+                                 };
+    }
+    
+    private const  int          LogCapacity       = 1000;
+    private static int          _frame            = 0;
+    private static bool         _ignoreDownEvent  = false;
+    private static bool         _ignoreMovedEvent = false;
+    private static List<string> _eventLog         = new(LogCapacity);
+
+    private static void ImGuiLog(string message)
+    {
+        _eventLog.Add(message);
+
+        if (_eventLog.Count >= LogCapacity)
+        {
+            _eventLog.RemoveAt(0);
+        }
     }
 
     private static void ImGuiOnLayout(object? sender, EventArgs args)
     {
+        _frame++;
         bool windowOpen = ImGui.Begin($"{Fonts.Lucide.Mouse} Mouse");
 
         if (!windowOpen)
@@ -74,27 +105,32 @@ public static class GameMouse
 
         if (movementHeader)
         {
+            bool hasMoved = HasMoved;
+            
             ImGui.Text($"Position: {Position}");
             ImGui.Text($"PrevPos: {PreviousPosition}");
             ImGui.Text($"PosDelta: {PositionDelta}");
-            ImGui.Text($"HasMoved: {HasMoved}");
+            ImGui.Checkbox($"HasMoved", ref hasMoved);
         }
         
         bool scrollHeader = ImGui.CollapsingHeader("Scroll");
 
         if (scrollHeader)
         {
+            bool hasScrolled = HasScrolled;
+            
             ImGui.Text($"Scroll: {ScrollValue}");
             ImGui.Text($"PrevScroll: {PreviousScrollValue}");
             ImGui.Text($"ScrollDelta: {ScrollDelta}");
-            ImGui.Text($"HasScrolled: {HasScrolled}");
+            ImGui.Checkbox($"HasScrolled", ref hasScrolled);
         }
 
         bool buttonsHeader = ImGui.CollapsingHeader("Buttons");
 
         if (buttonsHeader)
         {
-            ImGui.BeginTable("Buttons", 4);
+            const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
+            ImGui.BeginTable("Buttons", 4, flags);
             ImGui.TableSetupColumn("Button");
             ImGui.TableSetupColumn("State");
             ImGui.TableSetupColumn("Pressed");
@@ -131,28 +167,32 @@ public static class GameMouse
                 }
                 
                 ImGui.TableNextColumn();
-                
-                if (pressed)
-                {
-                    ImGui.Text(pressed.ToString());
-                }
-                else
-                {
-                    ImGui.TextDisabled(pressed.ToString());
-                }
-
+                ImGui.Checkbox($"##{button}pressed", ref pressed);
                 ImGui.TableNextColumn();
-
-                if (released)
-                {
-                    ImGui.Text(released.ToString());
-                }
-                else
-                {
-                    ImGui.TextDisabled(released.ToString());
-                }
+                ImGui.Checkbox($"##{button}released", ref released);
             }
             ImGui.EndTable();
+        }
+
+        bool eventLogHeader = ImGui.CollapsingHeader("Events log");
+
+        if (eventLogHeader)
+        {
+            ImGui.Checkbox("Ignore down event", ref _ignoreDownEvent);
+            ImGui.Checkbox("Ignore move event", ref _ignoreMovedEvent);
+            
+            bool clearPressed = ImGui.Button("Clear");
+            if (clearPressed) _eventLog.Clear();
+            
+            ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle);
+            
+            foreach (string message in _eventLog)
+            {
+                ImGui.Text(message);
+            }
+            ImGui.SetScrollHereY();
+            
+            ImGui.EndChild();
         }
 
         ImGui.End();

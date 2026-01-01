@@ -3,11 +3,11 @@
 public class MouseButtonEventArgs : EventArgs
 {
     public MouseButtons  Button   { get; }
-    public MouseSnapshot Snapshot { get; }
+    public MouseSnapshot State { get; }
 
-    public MouseButtonEventArgs(MouseButtons button, MouseSnapshot snapshot)
+    public MouseButtonEventArgs(MouseButtons button, MouseSnapshot state)
     {
         Button   = button;
-        Snapshot = snapshot;
+        State = state;
     }
 }
