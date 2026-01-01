@@ -8,6 +8,6 @@ public readonly struct ButtonDragState
     public ButtonDragState(Point lastPressPosition, bool dragging)
     {
         LastPressPosition = lastPressPosition;
-        Dragging = dragging;
+        Dragging          = dragging;
     }
 }

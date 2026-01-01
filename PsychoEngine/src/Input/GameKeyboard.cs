@@ -47,20 +47,21 @@ public static class GameKeyboard
         AllKeys = Enum.GetValues<Keys>();
 
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
-        
+
         OnKeyDown += (sender, args) =>
                      {
                          if (_ignoreDownEvent) return;
                          ImGuiLog($"Down {args.Key}");
                      };
-        OnKeyPressed += (sender, args) => ImGuiLog($"Pressed {args.Key}");
+
+        OnKeyPressed  += (sender, args) => ImGuiLog($"Pressed {args.Key}");
         OnKeyReleased += (sender, args) => ImGuiLog($"Released {args.Key}");
     }
 
     private const  int          LogCapacity = 1000;
     private static bool         _activeOnly = true;
-    private static bool         _ignoreDownEvent = false;
-    private static List<string> _eventLog   = new(LogCapacity);
+    private static bool         _ignoreDownEvent;
+    private static List<string> _eventLog = new(LogCapacity);
 
     private static void ImGuiLog(string message)
     {
@@ -71,7 +72,7 @@ public static class GameKeyboard
             _eventLog.RemoveAt(0);
         }
     }
-    
+
     private static void ImGuiOnLayout(object? sender, EventArgs args)
     {
         bool windowOpen = ImGui.Begin($"{Fonts.Lucide.Keyboard} Keyboard ");
@@ -92,7 +93,7 @@ public static class GameKeyboard
         if (keysHeader)
         {
             ImGui.Checkbox("Active keys only", ref _activeOnly);
-            
+
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
             ImGui.BeginTable("Keys", 4, flags);
             ImGui.TableSetupColumn("Key");
@@ -100,15 +101,15 @@ public static class GameKeyboard
             ImGui.TableSetupColumn("Pressed");
             ImGui.TableSetupColumn("Released");
             ImGui.TableHeadersRow();
-            
+
             foreach (Keys button in AllKeys)
             {
                 KeyState state    = GetKey(button);
                 bool     pressed  = WasKeyPressed(button);
                 bool     released = WasKeyReleased(button);
-            
-                if (_activeOnly && (state != KeyState.Down && !released)) continue;
-                
+
+                if (_activeOnly && state != KeyState.Down && !released) continue;
+
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
@@ -120,9 +121,9 @@ public static class GameKeyboard
                 {
                     ImGui.TextDisabled(button.ToString());
                 }
-                
+
                 ImGui.TableNextColumn();
-                
+
                 if (state == KeyState.Down)
                 {
                     ImGui.Text(state.ToString());
@@ -131,12 +132,13 @@ public static class GameKeyboard
                 {
                     ImGui.TextDisabled(state.ToString());
                 }
-                
+
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}pressed", ref pressed);
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}released", ref released);
             }
+
             ImGui.EndTable();
         }
 
@@ -145,18 +147,19 @@ public static class GameKeyboard
         if (eventLogHeader)
         {
             ImGui.Checkbox("Ignore down event", ref _ignoreDownEvent);
-            
+
             bool clearPressed = ImGui.Button("Clear");
             if (clearPressed) _eventLog.Clear();
-            
+
             ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle);
-            
+
             foreach (string message in _eventLog)
             {
                 ImGui.Text(message);
             }
+
             ImGui.SetScrollHereY();
-            
+
             ImGui.EndChild();
         }
 

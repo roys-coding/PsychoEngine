@@ -5,7 +5,7 @@ using PsychoEngine.Utils;
 namespace PsychoEngine.Input;
 
 public static class GameMouse
-{ 
+{
     // Constants.
     private const float WheelDeltaUnit = 120f;
 
@@ -68,6 +68,8 @@ public static class GameMouse
 
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
+        #region ImGui
+
         OnButtonPressed  += (_, args) => ImGuiLog($"{_frame}: Pressed {args.Button}");
         OnButtonReleased += (_, args) => ImGuiLog($"{_frame}: Released {args.Button}");
         OnScrolled       += (_, args) => ImGuiLog($"{_frame}: Scrolled {args.ScrollDelta}");
@@ -91,6 +93,8 @@ public static class GameMouse
                             if (_ignoreDownEvent) return;
                             ImGuiLog($"{_frame}: Down {args.Button}");
                         };
+
+        #endregion
     }
 
     #region ImGui
@@ -288,28 +292,28 @@ public static class GameMouse
         PositionDelta    = Position - PreviousPosition;
         Moved            = PositionDelta != Point.Zero;
 
-        // Scroll.
-        PreviousScrollValue = _previousState.ScrollWheelValue / WheelDeltaUnit;
-        ScrollValue         = _currentState.ScrollWheelValue  / WheelDeltaUnit;
-        ScrollDelta         = ScrollValue - PreviousScrollValue;
-        Scrolled            = ScrollDelta != 0f;
-
-        // Dragging.
-        foreach (MouseButtons button in AllButtons)
-        {
-            UpdateButtonInputState(button);
-            UpdateButtonDragState(button);
-        }
-
         if (Moved)
         {
             OnMoved?.Invoke(null,
                             new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta, GetSnapshot()));
         }
 
+        // Scroll.
+        PreviousScrollValue = _previousState.ScrollWheelValue / WheelDeltaUnit;
+        ScrollValue         = _currentState.ScrollWheelValue  / WheelDeltaUnit;
+        ScrollDelta         = ScrollValue - PreviousScrollValue;
+        Scrolled            = ScrollDelta != 0f;
+
         if (Scrolled)
         {
             OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, GetSnapshot()));
+        }
+
+        // Dragging.
+        foreach (MouseButtons button in AllButtons)
+        {
+            UpdateButtonInputState(button);
+            UpdateButtonDragState(button);
         }
     }
 
