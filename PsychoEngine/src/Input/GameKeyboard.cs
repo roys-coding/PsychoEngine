@@ -166,38 +166,7 @@ public static class GameKeyboard
 
     internal static void Update(Game game, GameTime gameTime)
     {
-        if (game.IsActive && !ImGui.GetIO().WantCaptureKeyboard)
-        {
-            // Update input state normally.
-            _previousState = _currentState;
-            _currentState  = Keyboard.GetState();
-        }
-        else
-        {
-            switch (_focusLostInputBehaviour)
-            {
-                case FocusLostInputBehaviour.ClearState:
-                    // Pass an empty state, releasing all keys.
-                    _previousState = _currentState;
-                    _currentState  = default(KeyboardState);
-                    break;
-
-                case FocusLostInputBehaviour.MaintainState:
-                    // Maintain previous state, not releasing nor pressing any more keys.
-                    _previousState = _currentState;
-                    break;
-
-                case FocusLostInputBehaviour.KeepUpdating:
-                    // Update input state normally.
-                    _previousState = _currentState;
-                    _currentState  = Keyboard.GetState();
-                    break;
-
-                default:
-                    throw new
-                        InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
-            }
-        }
+        UpdateKeyboardStates(game);
 
         /* TODO: Snapshots */
 
@@ -246,5 +215,41 @@ public static class GameKeyboard
     public static bool WasKeyReleased(Keys key)
     {
         return _previousState[key] == KeyState.Down && _currentState[key] == KeyState.Up;
+    }
+
+    private static void UpdateKeyboardStates(Game game)
+    {
+        if (game.IsActive && !ImGui.GetIO().WantCaptureKeyboard)
+        {
+            // Update input state normally.
+            _previousState = _currentState;
+            _currentState  = Keyboard.GetState();
+            
+            return;
+        }
+
+        switch (_focusLostInputBehaviour)
+        {
+            case FocusLostInputBehaviour.ClearState:
+                // Pass an empty state, releasing all keys.
+                _previousState = _currentState;
+                _currentState  = default(KeyboardState);
+                break;
+
+            case FocusLostInputBehaviour.MaintainState:
+                // Maintain previous state, not releasing nor pressing any more keys.
+                _previousState = _currentState;
+                break;
+
+            case FocusLostInputBehaviour.KeepUpdating:
+                // Update input state normally.
+                _previousState = _currentState;
+                _currentState  = Keyboard.GetState();
+                break;
+
+            default:
+                throw new
+                    InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
+        }
     }
 }
