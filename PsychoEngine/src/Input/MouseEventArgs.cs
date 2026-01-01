@@ -2,10 +2,10 @@
 
 public class MouseEventArgs : EventArgs
 {
-    public GameMouseState State { get; }
+    public MouseSnapshot Snapshot { get; }
 
-    public MouseEventArgs(GameMouseState state)
+    public MouseEventArgs(MouseSnapshot snapshot)
     {
-        State = state;
+        Snapshot = snapshot;
     }
 }

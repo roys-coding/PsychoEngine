@@ -2,12 +2,12 @@
 
 public class MouseButtonEventArgs : EventArgs
 {
-    public MouseButtons   Button { get; }
-    public GameMouseState State  { get; }
+    public MouseButtons  Button   { get; }
+    public MouseSnapshot Snapshot { get; }
 
-    public MouseButtonEventArgs(MouseButtons button, GameMouseState state)
+    public MouseButtonEventArgs(MouseButtons button, MouseSnapshot snapshot)
     {
-        Button = button;
-        State  = state;
+        Button   = button;
+        Snapshot = snapshot;
     }
 }

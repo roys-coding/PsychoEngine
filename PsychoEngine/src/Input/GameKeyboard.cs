@@ -37,13 +37,10 @@ public static class GameKeyboard
     }
 
     // Key checks.
-    public static bool ModShift => IsKeyDown(Keys.LeftShift) || IsKeyDown(Keys.RightShift);
-
+    public static bool ModShift   => IsKeyDown(Keys.LeftShift)   || IsKeyDown(Keys.RightShift);
     public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
-
-    public static bool ModAlt => IsKeyDown(Keys.LeftAlt) || IsKeyDown(Keys.RightAlt);
-
-    public static bool ModSuper => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
+    public static bool ModAlt     => IsKeyDown(Keys.LeftAlt)     || IsKeyDown(Keys.RightAlt);
+    public static bool ModSuper   => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
 
     static GameKeyboard()
     {
@@ -67,28 +64,69 @@ public static class GameKeyboard
         bool focusLostChanged                          = ImGui.DragInt("FocusLost", ref focusLost, 0, 2);
         if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
 
-        ImGui.TextDisabled($"Last input: {LastInputTime}");
+        bool keysHeader = ImGui.CollapsingHeader("Keys");
 
-        foreach (Keys key in AllKeys)
+        if (keysHeader)
         {
-            KeyState state     = GetKey(key);
-            string   keyString = $"{key}: {state}";
-
-            if (WasKeyPressed(key)) keyString  += " Pressed";
-            if (WasKeyReleased(key)) keyString += " Released";
-
-            switch (state)
+            ImGui.BeginTable("Keys", 4);
+            ImGui.TableSetupColumn("Key");
+            ImGui.TableSetupColumn("State");
+            ImGui.TableSetupColumn("Pressed");
+            ImGui.TableSetupColumn("Released");
+            ImGui.TableHeadersRow();
+            
+            foreach (Keys button in AllKeys)
             {
-                case KeyState.Down:
-                    ImGui.Text(keyString);
+                KeyState state    = GetKey(button);
+                bool        pressed  = WasKeyPressed(button);
+                bool        released = WasKeyReleased(button);
+            
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
 
-                    break;
+                if (state == KeyState.Down)
+                {
+                    ImGui.Text(button.ToString());
+                }
+                else
+                {
+                    ImGui.TextDisabled(button.ToString());
+                }
+                
+                ImGui.TableNextColumn();
+                
+                if (state == KeyState.Down)
+                {
+                    ImGui.Text(state.ToString());
+                }
+                else
+                {
+                    ImGui.TextDisabled(state.ToString());
+                }
+                
+                ImGui.TableNextColumn();
+                
+                if (pressed)
+                {
+                    ImGui.Text(pressed.ToString());
+                }
+                else
+                {
+                    ImGui.TextDisabled(pressed.ToString());
+                }
 
-                case KeyState.Up:
-                    ImGui.TextDisabled(keyString);
+                ImGui.TableNextColumn();
 
-                    break;
+                if (released)
+                {
+                    ImGui.Text(released.ToString());
+                }
+                else
+                {
+                    ImGui.TextDisabled(released.ToString());
+                }
             }
+            ImGui.EndTable();
         }
 
         ImGui.End();
@@ -128,6 +166,8 @@ public static class GameKeyboard
                         InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
             }
         }
+
+        /* TODO: Snapshots */
 
         if (_previousState != _currentState)
         {
