@@ -6,16 +6,18 @@ namespace PsychoEngine.Input;
 
 public static class GameMouse
 {
+    // TODO: Implement FNA Click ext.
+    
     // Constants.
     private const float WheelDeltaUnit = 120f;
 
     // Events.
+    public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
+    public static event EventHandler<MouseScrolledEventArgs>? OnScrolled;
+    
     public static event EventHandler<MouseButtonEventArgs>? OnButtonDown;
     public static event EventHandler<MouseButtonEventArgs>? OnButtonPressed;
     public static event EventHandler<MouseButtonEventArgs>? OnButtonReleased;
-
-    public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
-    public static event EventHandler<MouseScrolledEventArgs>? OnScrolled;
 
     public static event EventHandler<MouseDraggedEventArgs>? OnDragStarted;
     public static event EventHandler<MouseDraggedEventArgs>? OnDragging;
@@ -275,43 +277,6 @@ public static class GameMouse
 
     #endregion
 
-    internal static void Update(Game game, GameTime gameTime)
-    {
-        UpdateMouseStates(game);
-
-        /* TODO: Last input time detection */
-
-        // Position.
-        PreviousPosition = new Point(_previousState.X, _previousState.Y);
-        Position         = new Point(_currentState.X,  _currentState.Y);
-        PositionDelta    = Position - PreviousPosition;
-        Moved            = PositionDelta != Point.Zero;
-
-        if (Moved)
-        {
-            OnMoved?.Invoke(null,
-                            new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta, GetSnapshot()));
-        }
-
-        // Scroll.
-        PreviousScrollValue = _previousState.ScrollWheelValue / WheelDeltaUnit;
-        ScrollValue         = _currentState.ScrollWheelValue  / WheelDeltaUnit;
-        ScrollDelta         = ScrollValue - PreviousScrollValue;
-        Scrolled            = ScrollDelta != 0f;
-
-        if (Scrolled)
-        {
-            OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, GetSnapshot()));
-        }
-
-        // Dragging.
-        foreach (MouseButtons button in AllButtons)
-        {
-            UpdateButtonInputState(button);
-            UpdateButtonDragState(button);
-        }
-    }
-
     public static InputStates GetButton(MouseButtons button)
     {
         return GetButtonState(button);
@@ -340,6 +305,46 @@ public static class GameMouse
     public static bool IsButtonDragging(MouseButtons button)
     {
         return GetButtonDragState(button).IsDragging;
+    }
+
+    #region Internal methods
+
+    internal static void Update(Game game, GameTime gameTime)
+    {
+        UpdateMouseStates(game);
+
+        // TODO: Last input time detection
+        // TODO: Multi click detection.
+
+        // Position.
+        PreviousPosition = new Point(_previousState.X, _previousState.Y);
+        Position         = new Point(_currentState.X,  _currentState.Y);
+        PositionDelta    = Position - PreviousPosition;
+        Moved            = PositionDelta != Point.Zero;
+
+        if (Moved)
+        {
+            OnMoved?.Invoke(null,
+                            new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta, GetSnapshot()));
+        }
+
+        // Scroll.
+        PreviousScrollValue = _previousState.ScrollWheelValue / WheelDeltaUnit;
+        ScrollValue         = _currentState.ScrollWheelValue  / WheelDeltaUnit;
+        ScrollDelta         = ScrollValue - PreviousScrollValue;
+        Scrolled            = ScrollDelta != 0f;
+
+        if (Scrolled)
+        {
+            OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, GetSnapshot()));
+        }
+
+        // Input state and dragging.
+        foreach (MouseButtons button in AllButtons)
+        {
+            UpdateButtonInputState(button);
+            UpdateButtonDragState(button);
+        }
     }
 
     private static void UpdateMouseStates(Game game)
@@ -429,7 +434,7 @@ public static class GameMouse
             default: throw new InvalidOperationException($"InputState '{currentState}' not supported.");
         }
 
-        SetButtonStateInternal(button, inputState);
+        SetButtonState(button, inputState);
     }
 
     private static void UpdateButtonDragState(MouseButtons button)
@@ -485,7 +490,7 @@ public static class GameMouse
                };
     }
 
-    private static void SetButtonStateInternal(MouseButtons button, InputStates state)
+    private static void SetButtonState(MouseButtons button, InputStates state)
     {
         switch (button)
         {
@@ -563,4 +568,6 @@ public static class GameMouse
     {
         return default(MouseSnapshot);
     }
+
+    #endregion
 }

@@ -164,29 +164,6 @@ public static class GameKeyboard
         ImGui.End();
     }
 
-    internal static void Update(Game game, GameTime gameTime)
-    {
-        UpdateKeyboardStates(game);
-
-        /* TODO: Snapshots */
-
-        if (_previousState != _currentState)
-        {
-            LastInputTime = gameTime.TotalGameTime;
-        }
-
-        // Clear previous frame's cached pressed keys.
-        _allKeysDown = null;
-
-        // Handle input handlers.
-        foreach (Keys key in AllKeys)
-        {
-            if (IsKeyDown(key)) OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
-            if (WasKeyPressed(key)) OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key));
-            if (WasKeyReleased(key)) OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key));
-        }
-    }
-
     public static KeyState GetKey(Keys key)
     {
         return _currentState[key];
@@ -215,6 +192,31 @@ public static class GameKeyboard
     public static bool WasKeyReleased(Keys key)
     {
         return _previousState[key] == KeyState.Down && _currentState[key] == KeyState.Up;
+    }
+
+    #region Internal methods
+
+    internal static void Update(Game game, GameTime gameTime)
+    {
+        UpdateKeyboardStates(game);
+
+        /* TODO: Snapshots */
+
+        if (_previousState != _currentState)
+        {
+            LastInputTime = gameTime.TotalGameTime;
+        }
+
+        // Clear previous frame's cached pressed keys.
+        _allKeysDown = null;
+
+        // Handle input handlers.
+        foreach (Keys key in AllKeys)
+        {
+            if (IsKeyDown(key)) OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
+            if (WasKeyPressed(key)) OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key));
+            if (WasKeyReleased(key)) OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key));
+        }
     }
 
     private static void UpdateKeyboardStates(Game game)
@@ -252,4 +254,6 @@ public static class GameKeyboard
                     InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
         }
     }
+
+    #endregion
 }
