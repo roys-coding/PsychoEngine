@@ -61,3 +61,16 @@ public class MouseDraggedEventArgs : MouseEventArgs
         DragStartPosition = dragStartPosition;
     }
 }
+
+public class MouseMultiClickEventArgs : MouseEventArgs
+{
+    public MouseButtons Button            { get; }
+    public int          ConsecutiveClicks { get; }
+
+    public MouseMultiClickEventArgs(MouseButtons button, int consecutiveClicks, MouseSnapshot mouseState)
+        : base(mouseState)
+    {
+        Button            = button;
+        ConsecutiveClicks = consecutiveClicks;
+    }
+}

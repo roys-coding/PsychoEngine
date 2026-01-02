@@ -9,7 +9,7 @@ public static class GameMouse
     // TODO: Implement FNA Click ext.
 
     // Constants.
-    private const float WheelDeltaUnit = 120f;
+    private const float  WheelDeltaUnit                   = 120f;
 
     // Events.
     public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
@@ -23,23 +23,26 @@ public static class GameMouse
     public static event EventHandler<MouseDraggedEventArgs>? OnDragging;
     public static event EventHandler<MouseDraggedEventArgs>? OnDragReleased;
 
+    public static event EventHandler<MouseMultiClickEventArgs>? OnMultiClick;
+
     // Constants.
     private static readonly MouseButtons[] AllButtons;
 
     // Config.
-    private const  int                     DragThreshold            = 5;
-    private static FocusLostInputBehaviour _focusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
+    private const  int                     DragThreshold                    = 5;
+    private const  double                  ConsecutiveClickThresholdSeconds = 0.5;
+    private static FocusLostInputBehaviour _focusLostInputBehaviour         = FocusLostInputBehaviour.ClearState;
 
     // Mouse states.
     private static MouseState _previousState;
     private static MouseState _currentState;
 
     // Button states.
-    private static ButtonDragState _leftButtonDrag;
-    private static ButtonDragState _middleButtonDrag;
-    private static ButtonDragState _rightButtonDrag;
-    private static ButtonDragState _x1ButtonDrag;
-    private static ButtonDragState _x2ButtonDrag;
+    private static ButtonExtraState _leftButtonExtra;
+    private static ButtonExtraState _middleButtonExtra;
+    private static ButtonExtraState _rightButtonExtra;
+    private static ButtonExtraState _x1ButtonExtra;
+    private static ButtonExtraState _x2ButtonExtra;
 
     // Position.
     public static Point PreviousPosition { get; private set; }
@@ -66,6 +69,7 @@ public static class GameMouse
         OnScrolled       += (_, args) => ImGuiLog($"{_frame}: Scrolled {args.ScrollDelta}");
         OnDragStarted    += (_, args) => ImGuiLog($"{_frame}: Drag started {args.Button}, {args.DragStartPosition}");
         OnDragReleased   += (_, args) => ImGuiLog($"{_frame}: Drag released {args.Button}, {args.DragStartPosition}");
+        OnMultiClick     += (_, args) => ImGuiLog($"{_frame}: Multi Click {args.Button}x{args.ConsecutiveClicks}");
 
         OnMoved += (_, args) =>
                    {
@@ -101,7 +105,7 @@ public static class GameMouse
     private static void ImGuiLog(string message)
     {
         if (!_logHeader) return;
-        
+
         EventLog.Add(message);
 
         if (EventLog.Count >= LogCapacity)
@@ -214,10 +218,10 @@ public static class GameMouse
 
             foreach (MouseButtons button in AllButtons)
             {
-                Point           lastPress = GetDragStartPosition(button);
-                bool            dragging  = IsDragging(button);
-                bool            startedDrag  = WasDragStarted(button);
-                bool            stoppedDrag  = WasDragReleased(button);
+                Point lastPress   = GetDragStartPosition(button);
+                bool  dragging    = IsDragging(button);
+                bool  startedDrag = WasDragStarted(button);
+                bool  stoppedDrag = WasDragReleased(button);
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
@@ -248,6 +252,39 @@ public static class GameMouse
                 ImGui.Checkbox($"##{button}starteddrag", ref startedDrag);
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}stoppeddrag", ref stoppedDrag);
+            }
+
+            ImGui.EndTable();
+        }
+
+        bool clicksHeader = ImGui.CollapsingHeader("Multi Clicks");
+
+        if (clicksHeader)
+        {
+            const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
+            ImGui.BeginTable("Drag", 4, flags);
+            ImGui.TableSetupColumn("Button");
+            ImGui.TableSetupColumn("LastPress");
+            ImGui.TableSetupColumn("Clicks");
+            ImGui.TableSetupColumn("Multiclicked");
+            ImGui.TableHeadersRow();
+
+            foreach (MouseButtons button in AllButtons)
+            {
+                ButtonExtraState state           = GetButtonExtraState(button);
+                int              clicks          = GetConsecutiveClicks(button);
+                TimeSpan         lastReleaseTime = state.LastPressTime;
+                bool             multiClicked    = WasButtonMultiClicked(button);
+
+                ImGui.TableNextRow();
+                ImGui.TableNextColumn();
+                ImGui.Text(button.ToString());
+                ImGui.TableNextColumn();
+                ImGui.Text(lastReleaseTime.ToString());
+                ImGui.TableNextColumn();
+                ImGui.Text(clicks.ToString());
+                ImGui.TableNextColumn();
+                ImGui.Checkbox($"##{button}multiclick", ref multiClicked);
             }
 
             ImGui.EndTable();
@@ -317,13 +354,14 @@ public static class GameMouse
 
     public static bool IsDragging(MouseButtons button)
     {
-        return GetButtonDragState(button).IsDragging;
+        return GetButtonExtraState(button).IsDragging;
     }
 
     public static bool WasDragStarted(MouseButtons button)
     {
-        ButtonDragState dragState = GetButtonDragState(button);
-        return dragState is
+        ButtonExtraState extraState = GetButtonExtraState(button);
+
+        return extraState is
                {
                    IsDragging        : true,
                    PreviousIsDragging: false,
@@ -332,8 +370,9 @@ public static class GameMouse
 
     public static bool WasDragReleased(MouseButtons button)
     {
-        ButtonDragState dragState = GetButtonDragState(button);
-        return dragState is
+        ButtonExtraState extraState = GetButtonExtraState(button);
+
+        return extraState is
                {
                    IsDragging        : false,
                    PreviousIsDragging: true,
@@ -342,7 +381,17 @@ public static class GameMouse
 
     public static Point GetDragStartPosition(MouseButtons button)
     {
-        return GetButtonDragState(button).StartPosition;
+        return GetButtonExtraState(button).DragStartPosition;
+    }
+
+    public static bool WasButtonMultiClicked(MouseButtons button)
+    {
+        return WasButtonPressed(button) && GetButtonExtraState(button).ConsecutiveClicks > 0;
+    }
+
+    public static int GetConsecutiveClicks(MouseButtons button)
+    {
+        return GetButtonExtraState(button).ConsecutiveClicks;
     }
 
     #region Internal methods
@@ -396,6 +445,7 @@ public static class GameMouse
             }
 
             UpdateButtonDragging(button);
+            UpdateButtonConsecutiveClicking(button, gameTime);
         }
     }
 
@@ -447,87 +497,111 @@ public static class GameMouse
 
     private static void UpdateButtonDragging(MouseButtons button)
     {
-        ButtonDragState buttonDragState = GetButtonDragState(button);
+        ButtonExtraState state = GetButtonExtraState(button);
 
-        Point dragStartPosition    = buttonDragState.StartPosition;
-        bool  dragging             = buttonDragState.IsDragging;
-        bool  previousDragging     = dragging;
+        state.PreviousIsDragging = state.IsDragging;
 
         if (WasButtonPressed(button))
         {
-            dragStartPosition = Position;
+            state.DragStartPosition = Position;
         }
 
         if (WasButtonReleased(button))
         {
-            if (dragging)
+            if (state.IsDragging)
             {
                 // Button stopped dragging.
-                dragging = false;
-                OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, dragStartPosition, GetSnapshot()));
+                state.IsDragging = false;
+                OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, GetSnapshot()));
             }
-            
-            dragStartPosition = Point.Zero;
+
+            state.DragStartPosition = Point.Zero;
         }
 
-        if (IsButtonDown(button) && !dragging)
+        if (IsButtonDown(button) && !state.IsDragging)
         {
-            float distance = dragStartPosition.Distance(Position);
+            float distance = state.DragStartPosition.Distance(Position);
 
             if (distance > DragThreshold)
             {
                 // Button began dragging.
-                dragging = true;
-                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, dragStartPosition, GetSnapshot()));
+                state.IsDragging = true;
+                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, GetSnapshot()));
             }
         }
 
-        if (dragging)
+        if (state.IsDragging)
         {
-            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, dragStartPosition, GetSnapshot()));
+            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, GetSnapshot()));
         }
 
-        SetButtonDragState(button, new ButtonDragState(dragStartPosition, previousDragging, dragging));
+        SetButtonExtraState(button, state);
     }
 
-    private static ButtonDragState GetButtonDragState(MouseButtons button)
+    private static void UpdateButtonConsecutiveClicking(MouseButtons button, GameTime gameTime)
+    {
+        ButtonExtraState state = GetButtonExtraState(button);
+
+        if (WasButtonPressed(button))
+        {
+            TimeSpan timeSinceLastClick = gameTime.TotalGameTime - state.LastPressTime;
+
+            if (timeSinceLastClick.TotalSeconds <= ConsecutiveClickThresholdSeconds)
+            {
+                state.ConsecutiveClicks++;
+
+                OnMultiClick?.Invoke(null,
+                                     new MouseMultiClickEventArgs(button, state.ConsecutiveClicks, GetSnapshot()));
+            }
+            else
+            {
+                state.ConsecutiveClicks = 0;
+            }
+
+            state.LastPressTime = gameTime.TotalGameTime;
+        }
+
+        SetButtonExtraState(button, state);
+    }
+
+    private static ButtonExtraState GetButtonExtraState(MouseButtons button)
     {
         return button switch
                {
-                   MouseButtons.None   => default(ButtonDragState),
-                   MouseButtons.Left   => _leftButtonDrag,
-                   MouseButtons.Middle => _middleButtonDrag,
-                   MouseButtons.Right  => _rightButtonDrag,
-                   MouseButtons.X1     => _x1ButtonDrag,
-                   MouseButtons.X2     => _x2ButtonDrag,
+                   MouseButtons.None   => default(ButtonExtraState),
+                   MouseButtons.Left   => _leftButtonExtra,
+                   MouseButtons.Middle => _middleButtonExtra,
+                   MouseButtons.Right  => _rightButtonExtra,
+                   MouseButtons.X1     => _x1ButtonExtra,
+                   MouseButtons.X2     => _x2ButtonExtra,
                    _                   => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
                };
     }
 
-    private static void SetButtonDragState(MouseButtons button, ButtonDragState state)
+    private static void SetButtonExtraState(MouseButtons button, ButtonExtraState state)
     {
         switch (button)
         {
             case MouseButtons.None: break;
 
             case MouseButtons.Left:
-                _leftButtonDrag = state;
+                _leftButtonExtra = state;
                 break;
 
             case MouseButtons.Middle:
-                _middleButtonDrag = state;
+                _middleButtonExtra = state;
                 break;
 
             case MouseButtons.Right:
-                _rightButtonDrag = state;
+                _rightButtonExtra = state;
                 break;
 
             case MouseButtons.X1:
-                _x1ButtonDrag = state;
+                _x1ButtonExtra = state;
                 break;
 
             case MouseButtons.X2:
-                _x2ButtonDrag = state;
+                _x2ButtonExtra = state;
                 break;
 
             default: throw new InvalidOperationException($"MouseButton '{button}' not supported.");
