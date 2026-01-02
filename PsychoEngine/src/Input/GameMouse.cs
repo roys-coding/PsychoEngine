@@ -507,7 +507,7 @@ public static class GameMouse
         foreach (MouseButtons button in AllButtons)
         {
             MouseButtonState state = GetButtonState(button);
-            
+
             UpdateButtonInputState(button, ref state);
             UpdateButtonDragging(button, ref state);
             UpdateButtonConsecutiveClicking(button, ref state);
@@ -564,8 +564,8 @@ public static class GameMouse
 
     private static void UpdateButtonInputState(MouseButtons button, ref MouseButtonState state)
     {
-        ButtonState      previousState = _previousState.GetButton(button);
-        ButtonState      currentState  = _currentState.GetButton(button);
+        ButtonState previousState = _previousState.GetButton(button);
+        ButtonState currentState  = _currentState.GetButton(button);
 
         InputStates inputState       = InputStates.None;
         bool        receivedAnyInput = false;

@@ -1,11 +1,12 @@
 ﻿using Hexa.NET.ImGui;
 using Hexa.NET.ImGui.Utilities;
+using Hexa.NET.ImPlot;
 using ImGuiXNA;
 using Microsoft.Xna.Framework.Graphics;
 using Vector2 = System.Numerics.Vector2;
 using Vector4 = System.Numerics.Vector4;
 
-namespace PsychoEngine;
+namespace PsychoEngine.Core;
 
 public class ImGuiManager
 {
@@ -28,6 +29,11 @@ public class ImGuiManager
         // Set up ImGui context.
         ImGuiContextPtr context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
+
+        // Set up ImPlot context.
+        ImPlotContextPtr plotContext = ImPlot.CreateContext();
+        ImPlot.SetImGuiContext(context);
+        ImPlot.SetCurrentContext(plotContext);
 
         _platform.Initialize(graphicsDevice);
         _renderer.Initialize(graphicsDevice);
@@ -283,5 +289,6 @@ public class ImGuiManager
     {
         _renderer.Dispose();
         ImGui.DestroyContext();
+        ImPlot.DestroyContext();
     }
 }
