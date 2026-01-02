@@ -1,13 +1,15 @@
 ﻿namespace PsychoEngine.Input;
 
-public readonly struct ButtonDragState
+internal readonly struct ButtonDragState
 {
-    public Point LastPressPosition { get; }
-    public bool  IsDragging        { get; }
+    public Point StartPosition  { get; }
+    public bool  PreviousIsDragging { get; }
+    public bool  IsDragging         { get; }
 
-    public ButtonDragState(Point lastPressPosition, bool isDragging)
+    public ButtonDragState(Point startPosition, bool previousIsDragging, bool isDragging)
     {
-        LastPressPosition = lastPressPosition;
-        IsDragging        = isDragging;
+        StartPosition  = startPosition;
+        PreviousIsDragging = previousIsDragging;
+        IsDragging         = isDragging;
     }
 }

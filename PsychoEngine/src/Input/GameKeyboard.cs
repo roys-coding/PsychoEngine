@@ -44,6 +44,8 @@ public static class GameKeyboard
     {
         AllKeys = Enum.GetValues<Keys>();
 
+        #region ImGui
+
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
         OnKeyDown += (sender, args) =>
@@ -54,15 +56,22 @@ public static class GameKeyboard
 
         OnKeyPressed  += (sender, args) => ImGuiLog($"Pressed {args.Key}");
         OnKeyReleased += (sender, args) => ImGuiLog($"Released {args.Key}");
+
+        #endregion
     }
+
+    #region ImGui
 
     private const  int          LogCapacity = 1000;
     private static bool         _activeOnly = true;
     private static bool         _ignoreDownEvent;
     private static List<string> _eventLog = new(LogCapacity);
+    private static bool         _logHeader;
 
     private static void ImGuiLog(string message)
     {
+        if (!_logHeader) return;
+        
         _eventLog.Add(message);
 
         if (_eventLog.Count >= LogCapacity)
@@ -100,49 +109,49 @@ public static class GameKeyboard
             ImGui.TableSetupColumn("Released");
             ImGui.TableHeadersRow();
 
-            foreach (Keys button in AllKeys)
+            foreach (Keys key in AllKeys)
             {
-                KeyState state    = GetKey(button);
-                bool     pressed  = WasKeyPressed(button);
-                bool     released = WasKeyReleased(button);
+                InputStates state    = GetKey(key);
+                bool        pressed  = WasKeyPressed(key);
+                bool        released = WasKeyReleased(key);
 
-                if (_activeOnly && state != KeyState.Down && !released) continue;
+                if (_activeOnly && state == InputStates.Up && !released) continue;
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                if (state == KeyState.Down)
+                if (IsKeyDown(key))
                 {
-                    ImGui.Text(button.ToString());
+                    ImGui.Text(key.ToString());
                 }
                 else
                 {
-                    ImGui.TextDisabled(button.ToString());
+                    ImGui.TextDisabled(key.ToString());
                 }
 
                 ImGui.TableNextColumn();
 
-                if (state == KeyState.Down)
+                if (IsKeyDown(key))
                 {
-                    ImGui.Text(state.ToString());
+                    ImGui.Text("Down");
                 }
                 else
                 {
-                    ImGui.TextDisabled(state.ToString());
+                    ImGui.TextDisabled("Up");
                 }
 
                 ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}pressed", ref pressed);
+                ImGui.Checkbox($"##{key}pressed", ref pressed);
                 ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}released", ref released);
+                ImGui.Checkbox($"##{key}released", ref released);
             }
 
             ImGui.EndTable();
         }
 
-        bool eventLogHeader = ImGui.CollapsingHeader("Events log");
+        _logHeader = ImGui.CollapsingHeader("Events log");
 
-        if (eventLogHeader)
+        if (_logHeader)
         {
             ImGui.Checkbox("Ignore down event", ref _ignoreDownEvent);
 
@@ -164,14 +173,18 @@ public static class GameKeyboard
         ImGui.End();
     }
 
-    public static KeyState GetKey(Keys key)
-    {
-        return _currentState[key];
-    }
+    #endregion
 
-    public static bool CheckKey(Keys key, KeyState inputState)
+    public static InputStates GetKey(Keys key)
     {
-        return _currentState[key] == inputState;
+        InputStates inputState = InputStates.None;
+
+        if (IsKeyUp(key)) inputState        |= InputStates.Up;
+        if (IsKeyDown(key)) inputState      |= InputStates.Down;
+        if (WasKeyPressed(key)) inputState  |= InputStates.Pressed;
+        if (WasKeyReleased(key)) inputState |= InputStates.Released;
+
+        return inputState;
     }
 
     public static bool IsKeyUp(Keys key)
@@ -226,7 +239,7 @@ public static class GameKeyboard
             // Update input state normally.
             _previousState = _currentState;
             _currentState  = Keyboard.GetState();
-            
+
             return;
         }
 

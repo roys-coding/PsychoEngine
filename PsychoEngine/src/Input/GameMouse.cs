@@ -7,14 +7,14 @@ namespace PsychoEngine.Input;
 public static class GameMouse
 {
     // TODO: Implement FNA Click ext.
-    
+
     // Constants.
     private const float WheelDeltaUnit = 120f;
 
     // Events.
     public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
     public static event EventHandler<MouseScrolledEventArgs>? OnScrolled;
-    
+
     public static event EventHandler<MouseButtonEventArgs>? OnButtonDown;
     public static event EventHandler<MouseButtonEventArgs>? OnButtonPressed;
     public static event EventHandler<MouseButtonEventArgs>? OnButtonReleased;
@@ -35,12 +35,6 @@ public static class GameMouse
     private static MouseState _currentState;
 
     // Button states.
-    private static InputStates _leftButton;
-    private static InputStates _middleButton;
-    private static InputStates _rightButton;
-    private static InputStates _x1Button;
-    private static InputStates _x2Button;
-
     private static ButtonDragState _leftButtonDrag;
     private static ButtonDragState _middleButtonDrag;
     private static ButtonDragState _rightButtonDrag;
@@ -63,9 +57,9 @@ public static class GameMouse
     {
         AllButtons = Enum.GetValues<MouseButtons>();
 
-        CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
-
         #region ImGui
+
+        CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
         OnButtonPressed  += (_, args) => ImGuiLog($"{_frame}: Pressed {args.Button}");
         OnButtonReleased += (_, args) => ImGuiLog($"{_frame}: Released {args.Button}");
@@ -102,9 +96,12 @@ public static class GameMouse
     private static          bool         _ignoreMovedEvent;
     private static          bool         _ignoreDraggingEvent;
     private static readonly List<string> EventLog = new(LogCapacity);
+    private static          bool         _logHeader;
 
     private static void ImGuiLog(string message)
     {
+        if (!_logHeader) return;
+        
         EventLog.Add(message);
 
         if (EventLog.Count >= LogCapacity)
@@ -207,17 +204,20 @@ public static class GameMouse
         if (dragHeader)
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
-            ImGui.BeginTable("Drag", 3, flags);
+            ImGui.BeginTable("Drag", 5, flags);
             ImGui.TableSetupColumn("Button");
             ImGui.TableSetupColumn("LastPress");
             ImGui.TableSetupColumn("Dragging");
+            ImGui.TableSetupColumn("Started");
+            ImGui.TableSetupColumn("Stopped");
             ImGui.TableHeadersRow();
 
             foreach (MouseButtons button in AllButtons)
             {
-                ButtonDragState dragState = GetButtonDragState(button);
-                Point           lastPress = dragState.LastPressPosition;
-                bool            dragging  = dragState.IsDragging;
+                Point           lastPress = GetDragStartPosition(button);
+                bool            dragging  = IsDragging(button);
+                bool            startedDrag  = WasDragStarted(button);
+                bool            stoppedDrag  = WasDragReleased(button);
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
@@ -244,14 +244,18 @@ public static class GameMouse
 
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}dragging", ref dragging);
+                ImGui.TableNextColumn();
+                ImGui.Checkbox($"##{button}starteddrag", ref startedDrag);
+                ImGui.TableNextColumn();
+                ImGui.Checkbox($"##{button}stoppeddrag", ref stoppedDrag);
             }
 
             ImGui.EndTable();
         }
 
-        bool eventLogHeader = ImGui.CollapsingHeader("Events log");
+        _logHeader = ImGui.CollapsingHeader("Events log");
 
-        if (eventLogHeader)
+        if (_logHeader)
         {
             ImGui.Checkbox("Ignore down event",     ref _ignoreDownEvent);
             ImGui.Checkbox("Ignore move event",     ref _ignoreMovedEvent);
@@ -279,32 +283,66 @@ public static class GameMouse
 
     public static InputStates GetButton(MouseButtons button)
     {
-        return GetButtonState(button);
+        InputStates inputState = InputStates.None;
+
+        if (IsButtonUp(button)) inputState        |= InputStates.Up;
+        if (IsButtonDown(button)) inputState      |= InputStates.Down;
+        if (WasButtonPressed(button)) inputState  |= InputStates.Pressed;
+        if (WasButtonReleased(button)) inputState |= InputStates.Released;
+
+        return inputState;
     }
 
     public static bool IsButtonUp(MouseButtons button)
     {
-        return GetButtonState(button).HasFlag(InputStates.Up);
+        return _currentState.GetButton(button) == ButtonState.Released;
     }
 
     public static bool IsButtonDown(MouseButtons button)
     {
-        return GetButtonState(button).HasFlag(InputStates.Down);
+        return _currentState.GetButton(button) == ButtonState.Pressed;
     }
 
     public static bool WasButtonPressed(MouseButtons button)
     {
-        return GetButtonState(button).HasFlag(InputStates.Pressed);
+        return _currentState.GetButton(button)  == ButtonState.Pressed &&
+               _previousState.GetButton(button) == ButtonState.Released;
     }
 
     public static bool WasButtonReleased(MouseButtons button)
     {
-        return GetButtonState(button).HasFlag(InputStates.Released);
+        return _currentState.GetButton(button)  == ButtonState.Released &&
+               _previousState.GetButton(button) == ButtonState.Pressed;
     }
 
-    public static bool IsButtonDragging(MouseButtons button)
+    public static bool IsDragging(MouseButtons button)
     {
         return GetButtonDragState(button).IsDragging;
+    }
+
+    public static bool WasDragStarted(MouseButtons button)
+    {
+        ButtonDragState dragState = GetButtonDragState(button);
+        return dragState is
+               {
+                   IsDragging        : true,
+                   PreviousIsDragging: false,
+               };
+    }
+
+    public static bool WasDragReleased(MouseButtons button)
+    {
+        ButtonDragState dragState = GetButtonDragState(button);
+        return dragState is
+               {
+                   IsDragging        : false,
+                   PreviousIsDragging: true,
+               };
+    }
+
+    public static Point GetDragStartPosition(MouseButtons button)
+    {
+        return GetButtonDragState(button).StartPosition;
     }
 
     #region Internal methods
@@ -342,8 +380,22 @@ public static class GameMouse
         // Input state and dragging.
         foreach (MouseButtons button in AllButtons)
         {
-            UpdateButtonInputState(button);
-            UpdateButtonDragState(button);
+            if (IsButtonDown(button))
+            {
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+            }
+
+            if (WasButtonPressed(button))
+            {
+                OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+            }
+
+            if (WasButtonReleased(button))
+            {
+                OnButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+            }
+
+            UpdateButtonDragging(button);
         }
     }
 
@@ -393,131 +445,49 @@ public static class GameMouse
         }
     }
 
-    private static void UpdateButtonInputState(MouseButtons button)
-    {
-        ButtonState previousState = _previousState.GetButton(button);
-        ButtonState currentState  = _currentState.GetButton(button);
-
-        InputStates inputState = InputStates.None;
-
-        switch (currentState)
-        {
-            case ButtonState.Pressed:
-            {
-                // Button is currently pressed.
-                inputState |= InputStates.Down;
-                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
-
-                if (previousState == ButtonState.Released)
-                {
-                    // Button was just pressed.
-                    inputState |= InputStates.Pressed;
-                    OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
-                }
-
-                break;
-            }
-
-            case ButtonState.Released:
-                // Button is currently not pressed.
-                inputState |= InputStates.Up;
-
-                if (previousState == ButtonState.Pressed)
-                {
-                    // Button was just released.
-                    inputState |= InputStates.Released;
-                    OnButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
-                }
-
-                break;
-
-            default: throw new InvalidOperationException($"InputState '{currentState}' not supported.");
-        }
-
-        SetButtonState(button, inputState);
-    }
-
-    private static void UpdateButtonDragState(MouseButtons button)
+    private static void UpdateButtonDragging(MouseButtons button)
     {
         ButtonDragState buttonDragState = GetButtonDragState(button);
 
-        Point lastPressPosition = buttonDragState.LastPressPosition;
-        bool  dragging          = buttonDragState.IsDragging;
+        Point dragStartPosition    = buttonDragState.StartPosition;
+        bool  dragging             = buttonDragState.IsDragging;
+        bool  previousDragging     = dragging;
 
         if (WasButtonPressed(button))
         {
-            lastPressPosition = Position;
+            dragStartPosition = Position;
         }
 
-        if (WasButtonReleased(button) && dragging)
+        if (WasButtonReleased(button))
         {
-            // Button stopped dragging.
-            dragging = false;
-            OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, lastPressPosition, GetSnapshot()));
+            if (dragging)
+            {
+                // Button stopped dragging.
+                dragging = false;
+                OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, dragStartPosition, GetSnapshot()));
+            }
+            
+            dragStartPosition = Point.Zero;
         }
 
         if (IsButtonDown(button) && !dragging)
         {
-            float distance = lastPressPosition.Distance(Position);
+            float distance = dragStartPosition.Distance(Position);
 
             if (distance > DragThreshold)
             {
                 // Button began dragging.
                 dragging = true;
-                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, lastPressPosition, GetSnapshot()));
+                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, dragStartPosition, GetSnapshot()));
             }
         }
 
         if (dragging)
         {
-            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, lastPressPosition, GetSnapshot()));
+            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, dragStartPosition, GetSnapshot()));
         }
 
-        SetButtonDragState(button, new ButtonDragState(lastPressPosition, dragging));
-    }
-
-    private static InputStates GetButtonState(MouseButtons button)
-    {
-        return button switch
-               {
-                   MouseButtons.None   => InputStates.None,
-                   MouseButtons.Left   => _leftButton,
-                   MouseButtons.Middle => _middleButton,
-                   MouseButtons.Right  => _rightButton,
-                   MouseButtons.X1     => _x1Button,
-                   MouseButtons.X2     => _x2Button,
-                   _                   => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
-               };
-    }
-
-    private static void SetButtonState(MouseButtons button, InputStates state)
-    {
-        switch (button)
-        {
-            case MouseButtons.None: break;
-
-            case MouseButtons.Left:
-                _leftButton = state;
-                break;
-
-            case MouseButtons.Middle:
-                _middleButton = state;
-                break;
-
-            case MouseButtons.Right:
-                _rightButton = state;
-                break;
-
-            case MouseButtons.X1:
-                _x1Button = state;
-                break;
-
-            case MouseButtons.X2:
-                _x2Button = state;
-                break;
-
-            default: throw new InvalidOperationException($"MouseButton '{button}' not supported.");
-        }
+        SetButtonDragState(button, new ButtonDragState(dragStartPosition, previousDragging, dragging));
     }
 
     private static ButtonDragState GetButtonDragState(MouseButtons button)
