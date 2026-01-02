@@ -4,10 +4,12 @@ namespace PsychoEngine.Input;
 
 public class KeyboardEventArgs : EventArgs
 {
-    public Keys Key { get; }
+    public Keys    Key          { get; }
+    public ModKeys ModifierKeys { get; }
 
-    public KeyboardEventArgs(Keys key)
+    public KeyboardEventArgs(Keys key, ModKeys modifierKeys)
     {
-        Key = key;
+        Key          = key;
+        ModifierKeys = modifierKeys;
     }
 }

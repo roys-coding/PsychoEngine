@@ -467,7 +467,10 @@ public static class GameMouse
         if (Moved)
         {
             OnMoved?.Invoke(null,
-                            new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta));
+                            new MouseMovedEventArgs(PreviousPosition,
+                                                    Position,
+                                                    PositionDelta,
+                                                    GameKeyboard.ModifierKeys));
 
             LastMoveTime = GameTimes.Update.TotalGameTime;
         }
@@ -480,7 +483,11 @@ public static class GameMouse
 
         if (Scrolled)
         {
-            OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, Position));
+            OnScrolled?.Invoke(null,
+                               new MouseScrolledEventArgs(ScrollValue,
+                                                          ScrollDelta,
+                                                          Position,
+                                                          GameKeyboard.ModifierKeys));
 
             LastInputTime = GameTimes.Update.TotalGameTime;
         }
@@ -556,11 +563,13 @@ public static class GameMouse
                 if (previousState == ButtonState.Released)
                 {
                     inputState |= InputStates.Pressed;
-                    OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, Position));
+
+                    OnButtonPressed?.Invoke(null,
+                                            new MouseButtonEventArgs(button, Position, GameKeyboard.ModifierKeys));
                 }
 
                 inputState |= InputStates.Down;
-                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position));
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, GameKeyboard.ModifierKeys));
 
                 receivedAnyInput = true;
                 break;
@@ -573,7 +582,9 @@ public static class GameMouse
                 if (previousState == ButtonState.Pressed)
                 {
                     inputState |= InputStates.Released;
-                    OnButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, Position));
+
+                    OnButtonReleased?.Invoke(null,
+                                             new MouseButtonEventArgs(button, Position, GameKeyboard.ModifierKeys));
 
                     receivedAnyInput = true;
                 }
@@ -607,7 +618,12 @@ public static class GameMouse
             {
                 // Button stopped dragging.
                 state.IsDragging = false;
-                OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, Position));
+
+                OnDragReleased?.Invoke(null,
+                                       new MouseDraggedEventArgs(button,
+                                                                 state.DragStartPosition,
+                                                                 Position,
+                                                                 GameKeyboard.ModifierKeys));
             }
 
             state.DragStartPosition = Point.Zero;
@@ -621,13 +637,22 @@ public static class GameMouse
             {
                 // Button began dragging.
                 state.IsDragging = true;
-                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, Position));
+
+                OnDragStarted?.Invoke(null,
+                                      new MouseDraggedEventArgs(button,
+                                                                state.DragStartPosition,
+                                                                Position,
+                                                                GameKeyboard.ModifierKeys));
             }
         }
 
         if (state.IsDragging)
         {
-            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, Position));
+            OnDragging?.Invoke(null,
+                               new MouseDraggedEventArgs(button,
+                                                         state.DragStartPosition,
+                                                         Position,
+                                                         GameKeyboard.ModifierKeys));
         }
 
         SetButtonState(button, state);
@@ -646,7 +671,10 @@ public static class GameMouse
                 state.ConsecutiveClicks++;
 
                 OnMultiClick?.Invoke(null,
-                                     new MouseMultiClickEventArgs(button, state.ConsecutiveClicks, Position));
+                                     new MouseMultiClickEventArgs(button,
+                                                                  state.ConsecutiveClicks,
+                                                                  Position,
+                                                                  GameKeyboard.ModifierKeys));
             }
             else
             {

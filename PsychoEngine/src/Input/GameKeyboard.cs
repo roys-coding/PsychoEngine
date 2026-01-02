@@ -35,11 +35,26 @@ public static class GameKeyboard
         }
     }
 
-    // Key checks.
+    // Mod keys.
     public static bool ModShift   => IsKeyDown(Keys.LeftShift)   || IsKeyDown(Keys.RightShift);
     public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
     public static bool ModAlt     => IsKeyDown(Keys.LeftAlt)     || IsKeyDown(Keys.RightAlt);
     public static bool ModSuper   => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
+
+    public static ModKeys ModifierKeys
+    {
+        get
+        {
+            ModKeys modKeys = ModKeys.None;
+
+            if (ModShift) modKeys   |= ModKeys.Shift;
+            if (ModControl) modKeys |= ModKeys.Control;
+            if (ModAlt) modKeys     |= ModKeys.Alt;
+            if (ModSuper) modKeys   |= ModKeys.Super;
+
+            return modKeys;
+        }
+    }
 
     static GameKeyboard()
     {
@@ -49,36 +64,37 @@ public static class GameKeyboard
 
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
-        
-        OnKeyDown += (_, args) => 
+        OnKeyDown += (_, args) =>
+                     {
+                         if (!_logDownEvent) return;
+                         ImGuiLog("OnKeyDown");
+                         ImGuiLog($"     -Key: {args.Key}");
+                     };
+
+        OnKeyPressed += (_, args) =>
                         {
-                            if (!_logDownEvent) return;
-                            ImGuiLog("OnKeyDown");
+                            if (!_logPressEvent) return;
+                            ImGuiLog("OnKeyPressed");
                             ImGuiLog($"     -Key: {args.Key}");
                         };
-        OnKeyPressed += (_, args) => 
-                           {
-                               if (!_logPressEvent) return;
-                               ImGuiLog("OnKeyPressed");
-                               ImGuiLog($"     -Key: {args.Key}");
-                           };
-        OnKeyReleased += (_, args) => 
-                            {
-                                if (!_logReleaseEvent) return;
-                                ImGuiLog("OnKeyReleased");
-                                ImGuiLog($"     -Key: {args.Key}");
-                            }; 
+
+        OnKeyReleased += (_, args) =>
+                         {
+                             if (!_logReleaseEvent) return;
+                             ImGuiLog("OnKeyReleased");
+                             ImGuiLog($"     -Key: {args.Key}");
+                         };
 
         #endregion
     }
 
     #region ImGui
 
-    private const           int        LogCapacity     = 100;
-    private static          bool       _activeKeysOnly = true;
-    private static          bool       _logDownEvent;
-    private static          bool       _logPressEvent   = true;
-    private static          bool       _logReleaseEvent = true;
+    private const  int  LogCapacity     = 100;
+    private static bool _activeKeysOnly = true;
+    private static bool _logDownEvent;
+    private static bool _logPressEvent   = true;
+    private static bool _logReleaseEvent = true;
 
     private static readonly string[] FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
 
@@ -109,14 +125,17 @@ public static class GameKeyboard
         }
 
         bool configHeader = ImGui.CollapsingHeader("Config");
-        
+
         if (configHeader)
         {
-            int  focusLost                                 = (int)_focusLostInputBehaviour;
-            bool focusLostChanged                          = ImGui.Combo("FocusLost Behaviour", ref focusLost, FocusLostNames, FocusLostNames.Length);
+            int focusLost = (int)_focusLostInputBehaviour;
+
+            bool focusLostChanged =
+                ImGui.Combo("FocusLost Behaviour", ref focusLost, FocusLostNames, FocusLostNames.Length);
+
             if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
         }
-        
+
         bool timesHeader = ImGui.CollapsingHeader("Time stamps");
 
         if (timesHeader)
@@ -154,9 +173,9 @@ public static class GameKeyboard
                 ImGui.Text(key.ToString());
                 ImGui.TableNextColumn();
                 ImGui.Text($"{(IsKeyDown(key) ? "Down" : "Up")}");
-                
+
                 if (!IsKeyDown(key)) ImGui.EndDisabled();
-                
+
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{key}pressed", ref pressed);
                 ImGui.TableNextColumn();
@@ -178,7 +197,7 @@ public static class GameKeyboard
             if (clearLogs) EventLog.Clear();
 
             const ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar;
-            
+
             ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags);
 
             foreach (string message in EventLog)
@@ -244,23 +263,23 @@ public static class GameKeyboard
         {
             if (WasKeyPressed(key))
             {
-                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key));
+                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key, ModifierKeys));
                 receivedAnyInput = true;
             }
-            
+
             if (IsKeyDown(key))
             {
-                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
+                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key, ModifierKeys));
                 receivedAnyInput = true;
             }
 
             if (WasKeyReleased(key))
             {
-                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key));
+                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key, ModifierKeys));
                 receivedAnyInput = true;
             }
         }
-        
+
         if (receivedAnyInput) LastInputTime = GameTimes.Update.TotalGameTime;
     }
 
