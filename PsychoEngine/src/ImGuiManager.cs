@@ -287,7 +287,7 @@ public class ImGuiManager
     public void Terminate()
     {
         _renderer.Dispose();
-        ImGui.DestroyContext();
         ImPlot.DestroyContext();
+        ImGui.DestroyContext();
     }
 }
