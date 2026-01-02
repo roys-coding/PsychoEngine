@@ -72,9 +72,9 @@ public static class GameMouse
                    {
                        if (!_logMovedEvent) return;
                        ImGuiLog("OnMoved");
+                       ImGuiLog($"     -PrevPos: {args.PreviousPosition}");
                        ImGuiLog($"     -Position: {args.Position}");
                        ImGuiLog($"     -PosDelta: {args.PositionDelta}");
-                       ImGuiLog($"     -PrevPos: {args.PreviousPosition}");
                    };
 
         OnScrolled += (_, args) =>
@@ -83,6 +83,7 @@ public static class GameMouse
                           ImGuiLog("OnScrolled");
                           ImGuiLog($"     -ScrollValue: {args.ScrollValue}");
                           ImGuiLog($"     -ScrollDelta: {args.ScrollDelta}");
+                          ImGuiLog($"     -Position: {args.Position}");
                       };
 
         OnButtonDown += (_, args) =>
@@ -90,6 +91,7 @@ public static class GameMouse
                             if (!_logDownEvent) return;
                             ImGuiLog("OnButtonDown");
                             ImGuiLog($"     -Button: {args.Button}");
+                            ImGuiLog($"     -Position: {args.Position}");
                         };
 
         OnButtonPressed += (_, args) =>
@@ -97,6 +99,7 @@ public static class GameMouse
                                if (!_logPressEvent) return;
                                ImGuiLog("OnButtonPressed");
                                ImGuiLog($"     -Button: {args.Button}");
+                               ImGuiLog($"     -Position: {args.Position}");
                            };
 
         OnButtonReleased += (_, args) =>
@@ -104,6 +107,7 @@ public static class GameMouse
                                 if (!_logReleaseEvent) return;
                                 ImGuiLog("OnButtonReleased");
                                 ImGuiLog($"     -Button: {args.Button}");
+                                ImGuiLog($"     -Position: {args.Position}");
                             };
 
         OnDragStarted += (_, args) =>
@@ -112,6 +116,7 @@ public static class GameMouse
                              ImGuiLog("OnDragStarted");
                              ImGuiLog($"     -Button: {args.Button}");
                              ImGuiLog($"     -StartPos: {args.DragStartPosition}");
+                             ImGuiLog($"     -Position: {args.Position}");
                          };
 
         OnDragging += (_, args) =>
@@ -120,6 +125,7 @@ public static class GameMouse
                           ImGuiLog("OnDragging");
                           ImGuiLog($"     -Button: {args.Button}");
                           ImGuiLog($"     -StartPos: {args.DragStartPosition}");
+                          ImGuiLog($"     -Position: {args.Position}");
                       };
 
         OnDragReleased += (_, args) =>
@@ -128,6 +134,7 @@ public static class GameMouse
                               ImGuiLog("OnDragReleased");
                               ImGuiLog($"     -Button: {args.Button}");
                               ImGuiLog($"     -StartPos: {args.DragStartPosition}");
+                              ImGuiLog($"     -Position: {args.Position}");
                           };
 
         OnMultiClick += (_, args) =>
@@ -136,6 +143,7 @@ public static class GameMouse
                             ImGuiLog("OnMultiClick");
                             ImGuiLog($"     -Button: {args.Button}");
                             ImGuiLog($"     -Clicks: {args.ClickCount}");
+                            ImGuiLog($"     -Position: {args.Position}");
                         };
 
         #endregion
@@ -449,9 +457,6 @@ public static class GameMouse
     internal static void Update(Game game)
     {
         UpdateMouseStates(game);
-
-        // TODO: Last input time detection
-        // TODO: Multi click detection.
 
         // Position.
         PreviousPosition = new Point(_previousState.X, _previousState.Y);

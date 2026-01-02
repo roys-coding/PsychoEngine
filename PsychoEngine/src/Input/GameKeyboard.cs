@@ -234,8 +234,6 @@ public static class GameKeyboard
     {
         UpdateKeyboardStates(game);
 
-        /* TODO: Snapshots */
-
         // Clear previous frame's cached pressed keys.
         _allKeysDown = null;
 
