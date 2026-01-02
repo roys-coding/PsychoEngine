@@ -45,9 +45,9 @@ public static class GameMouse
     private static MouseButtonState _x2Button;
 
     // Input time stamps.
-    public static TimeSpan LastMoveTime { get; private set; }
+    public static TimeSpan LastMoveTime  { get; private set; }
     public static TimeSpan LastInputTime { get; private set; }
-    
+
     // Position.
     public static Point PreviousPosition { get; private set; }
     public static Point Position         { get; private set; }
@@ -66,69 +66,78 @@ public static class GameMouse
 
         #region ImGui
 
-        CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout; 
-        
-        OnMoved += (_, args) => 
-        {
-            if (!_logMovedEvent) return;
-            ImGuiLog("OnMoved");
-            ImGuiLog($"     -Position: {args.Position}");
-            ImGuiLog($"     -PosDelta: {args.PositionDelta}");
-            ImGuiLog($"     -PrevPos: {args.PreviousPosition}");
-        };
-        OnScrolled += (_, args) => 
-        {
-            if (!_logScrollEvent) return;
-            ImGuiLog("OnScrolled");
-            ImGuiLog($"     -ScrollValue: {args.ScrollValue}");
-            ImGuiLog($"     -ScrollDelta: {args.ScrollDelta}");
-        };
-        OnButtonDown += (_, args) => 
-        {
-            if (!_logDownEvent) return;
-            ImGuiLog("OnButtonDown");
-            ImGuiLog($"     -Button: {args.Button}");
-        };
-        OnButtonPressed += (_, args) => 
-        {
-            if (!_logPressEvent) return;
-            ImGuiLog("OnButtonPressed");
-            ImGuiLog($"     -Button: {args.Button}");
-        };
-        OnButtonReleased += (_, args) => 
-        {
-            if (!_logReleaseEvent) return;
-            ImGuiLog("OnButtonReleased");
-            ImGuiLog($"     -Button: {args.Button}");
-        }; 
-        OnDragStarted += (_, args) => 
-        {
-            if (!_logDragStartEvent) return;
-            ImGuiLog("OnDragStarted");
-            ImGuiLog($"     -Button: {args.Button}");
-            ImGuiLog($"     -StartPos: {args.DragStartPosition}");
-        }; 
-        OnDragging += (_, args) => 
-        {
-            if (!_logDragEvent) return;
-            ImGuiLog("OnDragging");
-            ImGuiLog($"     -Button: {args.Button}");
-            ImGuiLog($"     -StartPos: {args.DragStartPosition}");
-        };
-        OnDragReleased += (_, args) => 
-        {
-            if (!_logDragEndEvent) return;
-            ImGuiLog("OnDragReleased");
-            ImGuiLog($"     -Button: {args.Button}");
-            ImGuiLog($"     -StartPos: {args.DragStartPosition}");
-        };
-        OnMultiClick += (_, args) => 
-        {
-            if (!_logMulticlickEvent) return;
-            ImGuiLog("OnMultiClick");
-            ImGuiLog($"     -Button: {args.Button}");
-            ImGuiLog($"     -Clicks: {args.ClickCount}");
-        };
+        CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+
+        OnMoved += (_, args) =>
+                   {
+                       if (!_logMovedEvent) return;
+                       ImGuiLog("OnMoved");
+                       ImGuiLog($"     -Position: {args.Position}");
+                       ImGuiLog($"     -PosDelta: {args.PositionDelta}");
+                       ImGuiLog($"     -PrevPos: {args.PreviousPosition}");
+                   };
+
+        OnScrolled += (_, args) =>
+                      {
+                          if (!_logScrollEvent) return;
+                          ImGuiLog("OnScrolled");
+                          ImGuiLog($"     -ScrollValue: {args.ScrollValue}");
+                          ImGuiLog($"     -ScrollDelta: {args.ScrollDelta}");
+                      };
+
+        OnButtonDown += (_, args) =>
+                        {
+                            if (!_logDownEvent) return;
+                            ImGuiLog("OnButtonDown");
+                            ImGuiLog($"     -Button: {args.Button}");
+                        };
+
+        OnButtonPressed += (_, args) =>
+                           {
+                               if (!_logPressEvent) return;
+                               ImGuiLog("OnButtonPressed");
+                               ImGuiLog($"     -Button: {args.Button}");
+                           };
+
+        OnButtonReleased += (_, args) =>
+                            {
+                                if (!_logReleaseEvent) return;
+                                ImGuiLog("OnButtonReleased");
+                                ImGuiLog($"     -Button: {args.Button}");
+                            };
+
+        OnDragStarted += (_, args) =>
+                         {
+                             if (!_logDragStartEvent) return;
+                             ImGuiLog("OnDragStarted");
+                             ImGuiLog($"     -Button: {args.Button}");
+                             ImGuiLog($"     -StartPos: {args.DragStartPosition}");
+                         };
+
+        OnDragging += (_, args) =>
+                      {
+                          if (!_logDragEvent) return;
+                          ImGuiLog("OnDragging");
+                          ImGuiLog($"     -Button: {args.Button}");
+                          ImGuiLog($"     -StartPos: {args.DragStartPosition}");
+                      };
+
+        OnDragReleased += (_, args) =>
+                          {
+                              if (!_logDragEndEvent) return;
+                              ImGuiLog("OnDragReleased");
+                              ImGuiLog($"     -Button: {args.Button}");
+                              ImGuiLog($"     -StartPos: {args.DragStartPosition}");
+                          };
+
+        OnMultiClick += (_, args) =>
+                        {
+                            if (!_logMulticlickEvent) return;
+                            ImGuiLog("OnMultiClick");
+                            ImGuiLog($"     -Button: {args.Button}");
+                            ImGuiLog($"     -Clicks: {args.ClickCount}");
+                        };
+
         #endregion
     }
 
@@ -146,7 +155,7 @@ public static class GameMouse
     private static bool _logMulticlickEvent = true;
 
     private static readonly string[] FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
-    
+
     private static readonly List<string> EventLog = new(LogCapacity);
     private static          bool         _logHeader;
 
@@ -174,14 +183,17 @@ public static class GameMouse
         }
 
         bool configHeader = ImGui.CollapsingHeader("Config");
-        
+
         if (configHeader)
         {
-            int  focusLost                                 = (int)_focusLostInputBehaviour;
-            bool focusLostChanged                          = ImGui.Combo("FocusLost Behaviour", ref focusLost, FocusLostNames, FocusLostNames.Length);
+            int focusLost = (int)_focusLostInputBehaviour;
+
+            bool focusLostChanged =
+                ImGui.Combo("FocusLost Behaviour", ref focusLost, FocusLostNames, FocusLostNames.Length);
+
             if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
         }
-        
+
         bool timesHeader = ImGui.CollapsingHeader("Time stamps");
 
         if (timesHeader)
@@ -230,7 +242,7 @@ public static class GameMouse
             {
                 bool pressed  = WasButtonPressed(button);
                 bool released = WasButtonReleased(button);
-                
+
                 if (!IsButtonDown(button)) ImGui.BeginDisabled();
 
                 ImGui.TableNextRow();
@@ -238,9 +250,9 @@ public static class GameMouse
                 ImGui.Text(button.ToString());
                 ImGui.TableNextColumn();
                 ImGui.Text($"{(IsButtonDown(button) ? "Down" : "Up")}");
-                
+
                 if (!IsButtonDown(button)) ImGui.EndDisabled();
-                
+
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}pressed", ref pressed);
                 ImGui.TableNextColumn();
@@ -265,21 +277,21 @@ public static class GameMouse
 
             foreach (MouseButtons button in AllButtons)
             {
-                Point startPos   = GetDragStartPosition(button);
+                Point startPos    = GetDragStartPosition(button);
                 bool  dragging    = IsDragging(button);
                 bool  startedDrag = WasDragStarted(button);
                 bool  stoppedDrag = WasDragReleased(button);
 
                 if (!dragging) ImGui.BeginDisabled();
-                
+
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.Text(button.ToString());
                 ImGui.TableNextColumn();
                 ImGui.Text(startPos.ToString());
-                
+
                 if (!dragging) ImGui.EndDisabled();
-                
+
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}dragging", ref dragging);
                 ImGui.TableNextColumn();
@@ -311,7 +323,7 @@ public static class GameMouse
                 bool             multiClicked    = WasButtonMultiClicked(button);
 
                 if (!multiClicked) ImGui.BeginDisabled();
-                
+
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
                 ImGui.Text(button.ToString());
@@ -319,9 +331,9 @@ public static class GameMouse
                 ImGui.Text(lastReleaseTime.ToString());
                 ImGui.TableNextColumn();
                 ImGui.Text(clicks.ToString());
-                
+
                 if (!multiClicked) ImGui.EndDisabled();
-                
+
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{button}multi click", ref multiClicked);
             }
@@ -333,21 +345,21 @@ public static class GameMouse
 
         if (_logHeader)
         {
-            ImGui.Checkbox("Log MovedEvent", ref _logMovedEvent);
-            ImGui.Checkbox("Log ScrollEvent", ref _logScrollEvent);
-            ImGui.Checkbox("Log DownEvent", ref _logDownEvent);
-            ImGui.Checkbox("Log PressEvent", ref _logPressEvent);
-            ImGui.Checkbox("Log ReleaseEvent", ref _logReleaseEvent);
-            ImGui.Checkbox("Log DragStartEvent", ref _logDragStartEvent);
-            ImGui.Checkbox("Log DragEvent", ref _logDragEvent);
-            ImGui.Checkbox("Log DragEndEvent", ref _logDragEndEvent);
+            ImGui.Checkbox("Log MovedEvent",      ref _logMovedEvent);
+            ImGui.Checkbox("Log ScrollEvent",     ref _logScrollEvent);
+            ImGui.Checkbox("Log DownEvent",       ref _logDownEvent);
+            ImGui.Checkbox("Log PressEvent",      ref _logPressEvent);
+            ImGui.Checkbox("Log ReleaseEvent",    ref _logReleaseEvent);
+            ImGui.Checkbox("Log DragStartEvent",  ref _logDragStartEvent);
+            ImGui.Checkbox("Log DragEvent",       ref _logDragEvent);
+            ImGui.Checkbox("Log DragEndEvent",    ref _logDragEndEvent);
             ImGui.Checkbox("Log MultiClickEvent", ref _logMulticlickEvent);
 
             bool clearLogs = ImGui.Button("Clear");
             if (clearLogs) EventLog.Clear();
 
             const ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar;
-            
+
             ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags);
 
             foreach (string message in EventLog)
@@ -450,8 +462,8 @@ public static class GameMouse
         if (Moved)
         {
             OnMoved?.Invoke(null,
-                            new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta, GetSnapshot()));
-            
+                            new MouseMovedEventArgs(PreviousPosition, Position, PositionDelta));
+
             LastMoveTime = GameTimes.Update.TotalGameTime;
         }
 
@@ -463,8 +475,8 @@ public static class GameMouse
 
         if (Scrolled)
         {
-            OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, GetSnapshot()));
-            
+            OnScrolled?.Invoke(null, new MouseScrolledEventArgs(ScrollValue, ScrollDelta, Position));
+
             LastInputTime = GameTimes.Update.TotalGameTime;
         }
 
@@ -529,8 +541,8 @@ public static class GameMouse
         ButtonState      previousState = _previousState.GetButton(button);
         ButtonState      currentState  = _currentState.GetButton(button);
 
-        InputStates inputState = InputStates.None;
-        bool receivedAnyInput = false;
+        InputStates inputState       = InputStates.None;
+        bool        receivedAnyInput = false;
 
         switch (currentState)
         {
@@ -539,11 +551,11 @@ public static class GameMouse
                 if (previousState == ButtonState.Released)
                 {
                     inputState |= InputStates.Pressed;
-                    OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+                    OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, Position));
                 }
-                
+
                 inputState |= InputStates.Down;
-                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position));
 
                 receivedAnyInput = true;
                 break;
@@ -556,21 +568,20 @@ public static class GameMouse
                 if (previousState == ButtonState.Pressed)
                 {
                     inputState |= InputStates.Released;
-                    OnButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
-                
+                    OnButtonReleased?.Invoke(null, new MouseButtonEventArgs(button, Position));
+
                     receivedAnyInput = true;
                 }
 
                 break;
             }
 
-            default:
-                throw new InvalidOperationException($"Mouse state '{currentState}' not supported.");
+            default: throw new InvalidOperationException($"Mouse state '{currentState}' not supported.");
         }
 
         state.InputState = inputState;
         SetButtonState(button, state);
-        
+
         if (receivedAnyInput) LastInputTime = GameTimes.Update.TotalGameTime;
     }
 
@@ -591,7 +602,7 @@ public static class GameMouse
             {
                 // Button stopped dragging.
                 state.IsDragging = false;
-                OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, GetSnapshot()));
+                OnDragReleased?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, Position));
             }
 
             state.DragStartPosition = Point.Zero;
@@ -605,13 +616,13 @@ public static class GameMouse
             {
                 // Button began dragging.
                 state.IsDragging = true;
-                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, GetSnapshot()));
+                OnDragStarted?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, Position));
             }
         }
 
         if (state.IsDragging)
         {
-            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, GetSnapshot()));
+            OnDragging?.Invoke(null, new MouseDraggedEventArgs(button, state.DragStartPosition, Position));
         }
 
         SetButtonState(button, state);
@@ -630,7 +641,7 @@ public static class GameMouse
                 state.ConsecutiveClicks++;
 
                 OnMultiClick?.Invoke(null,
-                                     new MouseMultiClickEventArgs(button, state.ConsecutiveClicks, GetSnapshot()));
+                                     new MouseMultiClickEventArgs(button, state.ConsecutiveClicks, Position));
             }
             else
             {
@@ -685,11 +696,6 @@ public static class GameMouse
 
             default: throw new InvalidOperationException($"MouseButton '{button}' not supported.");
         }
-    }
-
-    private static MouseSnapshot GetSnapshot()
-    {
-        return default(MouseSnapshot);
     }
 
     #endregion
