@@ -1,4 +1,5 @@
 ﻿using Hexa.NET.ImGui;
+using Hexa.NET.ImPlot;
 using ImGuiXNA;
 using Microsoft.Xna.Framework.Input;
 
@@ -29,8 +30,8 @@ public class CoreEngine : Game
                                       ImGui.DockSpaceOverViewport(dockFlags);
                                       
                                       ImGui.ShowDemoWindow();
-                                      ImGui.Text($"{Fonts.Lucide.Gamepad} Gamepad");
-                                      ImGui.Text($"{Fonts.Lucide.Star} Star");
+                                      
+                                      ImPlot.ShowDemoWindow();
                                   };
     }
 
