@@ -28,6 +28,8 @@ public static class GameMouse
     // Constants.
     private static readonly MouseButtons[] AllButtons;
 
+    // TODO: Make input configurable.
+
     // Config.
     private const  int                     DragThreshold                    = 5;
     private const  double                  ConsecutiveClickThresholdSeconds = 0.5;
@@ -410,11 +412,6 @@ public static class GameMouse
         return GetButton(button).HasFlag(InputStates.Released);
     }
 
-    public static bool IsDragging(MouseButtons button)
-    {
-        return GetButtonState(button).IsDragging;
-    }
-
     public static bool WasDragStarted(MouseButtons button)
     {
         MouseButtonState state = GetButtonState(button);
@@ -424,6 +421,11 @@ public static class GameMouse
                    IsDragging        : true,
                    PreviousIsDragging: false,
                };
+    }
+
+    public static bool IsDragging(MouseButtons button)
+    {
+        return GetButtonState(button).IsDragging;
     }
 
     public static bool WasDragReleased(MouseButtons button)
@@ -445,6 +447,15 @@ public static class GameMouse
     public static bool WasButtonMultiClicked(MouseButtons button)
     {
         return WasButtonPressed(button) && GetButtonState(button).ConsecutiveClicks > 0;
+    }
+
+    public static bool WasButtonMultiClicked(MouseButtons button, int multiClicks)
+    {
+        MouseButtonState buttonState = GetButtonState(button);
+
+        return WasButtonPressed(button)                        &&
+               buttonState.ConsecutiveClicks               > 0 &&
+               buttonState.ConsecutiveClicks % multiClicks == 0;
     }
 
     public static int GetConsecutiveClicks(MouseButtons button)
@@ -495,9 +506,13 @@ public static class GameMouse
         // Input state and dragging.
         foreach (MouseButtons button in AllButtons)
         {
-            UpdateButtonInputState(button);
-            UpdateButtonDragging(button);
-            UpdateButtonConsecutiveClicking(button);
+            MouseButtonState state = GetButtonState(button);
+            
+            UpdateButtonInputState(button, ref state);
+            UpdateButtonDragging(button, ref state);
+            UpdateButtonConsecutiveClicking(button, ref state);
+
+            SetButtonState(button, state);
         }
     }
 
@@ -547,9 +562,8 @@ public static class GameMouse
         }
     }
 
-    private static void UpdateButtonInputState(MouseButtons button)
+    private static void UpdateButtonInputState(MouseButtons button, ref MouseButtonState state)
     {
-        MouseButtonState state         = GetButtonState(button);
         ButtonState      previousState = _previousState.GetButton(button);
         ButtonState      currentState  = _currentState.GetButton(button);
 
@@ -596,15 +610,12 @@ public static class GameMouse
         }
 
         state.InputState = inputState;
-        SetButtonState(button, state);
 
         if (receivedAnyInput) LastInputTime = GameTimes.Update.TotalGameTime;
     }
 
-    private static void UpdateButtonDragging(MouseButtons button)
+    private static void UpdateButtonDragging(MouseButtons button, ref MouseButtonState state)
     {
-        MouseButtonState state = GetButtonState(button);
-
         state.PreviousIsDragging = state.IsDragging;
 
         if (WasButtonPressed(button))
@@ -654,14 +665,10 @@ public static class GameMouse
                                                          Position,
                                                          GameKeyboard.ModifierKeys));
         }
-
-        SetButtonState(button, state);
     }
 
-    private static void UpdateButtonConsecutiveClicking(MouseButtons button)
+    private static void UpdateButtonConsecutiveClicking(MouseButtons button, ref MouseButtonState state)
     {
-        MouseButtonState state = GetButtonState(button);
-
         if (WasButtonPressed(button))
         {
             TimeSpan timeSinceLastClick = GameTimes.Update.TotalGameTime - state.LastPressTime;
@@ -683,8 +690,6 @@ public static class GameMouse
 
             state.LastPressTime = GameTimes.Update.TotalGameTime;
         }
-
-        SetButtonState(button, state);
     }
 
     private static MouseButtonState GetButtonState(MouseButtons button)
