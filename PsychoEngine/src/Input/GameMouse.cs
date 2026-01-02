@@ -69,12 +69,12 @@ public static class GameMouse
         OnScrolled       += (_, args) => ImGuiLog($"{_frame}: Scrolled {args.ScrollDelta}");
         OnDragStarted    += (_, args) => ImGuiLog($"{_frame}: Drag started {args.Button}, {args.DragStartPosition}");
         OnDragReleased   += (_, args) => ImGuiLog($"{_frame}: Drag released {args.Button}, {args.DragStartPosition}");
-        
-        OnMultiClick     += (_, args) =>
-                            {
-                                if (_ignoreMulticlickEvent) return;
-                                ImGuiLog($"{_frame}: Multi Click {args.Button}x{args.ConsecutiveClicks}");
-                            };
+
+        OnMultiClick += (_, args) =>
+                        {
+                            if (_ignoreMulticlickEvent) return;
+                            ImGuiLog($"{_frame}: Multi Click {args.Button}x{args.ConsecutiveClicks}");
+                        };
 
         OnMoved += (_, args) =>
                    {
@@ -300,9 +300,9 @@ public static class GameMouse
 
         if (_logHeader)
         {
-            ImGui.Checkbox("Ignore down event",     ref _ignoreDownEvent);
-            ImGui.Checkbox("Ignore move event",     ref _ignoreMovedEvent);
-            ImGui.Checkbox("Ignore dragging event", ref _ignoreDraggingEvent);
+            ImGui.Checkbox("Ignore down event",       ref _ignoreDownEvent);
+            ImGui.Checkbox("Ignore move event",       ref _ignoreMovedEvent);
+            ImGui.Checkbox("Ignore dragging event",   ref _ignoreDraggingEvent);
             ImGui.Checkbox("Ignore multiclick event", ref _ignoreMulticlickEvent);
 
             bool clearPressed = ImGui.Button("Clear");
@@ -489,19 +489,19 @@ public static class GameMouse
 
         if (currentState == ButtonState.Pressed)
         {
-            inputState         |= InputStates.Down;
+            inputState |= InputStates.Down;
             OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
 
             if (previousState == ButtonState.Released)
             {
-                inputState         |= InputStates.Pressed;
+                inputState |= InputStates.Pressed;
                 OnButtonPressed?.Invoke(null, new MouseButtonEventArgs(button, GetSnapshot()));
             }
         }
         else if (currentState == ButtonState.Released)
         {
-            inputState         |= InputStates.Up;
-            
+            inputState |= InputStates.Up;
+
             if (previousState == ButtonState.Pressed)
             {
                 inputState |= InputStates.Released;

@@ -71,7 +71,7 @@ public static class GameKeyboard
     private static void ImGuiLog(string message)
     {
         if (!_logHeader) return;
-        
+
         _eventLog.Add(message);
 
         if (_eventLog.Count >= LogCapacity)
