@@ -65,12 +65,12 @@ public class MouseDraggedEventArgs : MouseEventArgs
 public class MouseMultiClickEventArgs : MouseEventArgs
 {
     public MouseButtons Button            { get; }
-    public int          ConsecutiveClicks { get; }
+    public int          ClickCount { get; }
 
-    public MouseMultiClickEventArgs(MouseButtons button, int consecutiveClicks, MouseSnapshot mouseState)
+    public MouseMultiClickEventArgs(MouseButtons button, int clickCount, MouseSnapshot mouseState)
         : base(mouseState)
     {
         Button            = button;
-        ConsecutiveClicks = consecutiveClicks;
+        ClickCount = clickCount;
     }
 }

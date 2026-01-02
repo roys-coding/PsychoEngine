@@ -21,6 +21,7 @@ public static class GameKeyboard
     private static KeyboardState _previousState;
     private static Keys[]?       _allKeysDown;
 
+    // Input time stamps.
     public static TimeSpan LastInputTime { get; private set; }
 
     public static Keys[] AllKeysDown
@@ -48,35 +49,51 @@ public static class GameKeyboard
 
         CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
-        OnKeyDown += (sender, args) =>
-                     {
-                         if (_ignoreDownEvent) return;
-                         ImGuiLog($"Down {args.Key}");
-                     };
-
-        OnKeyPressed  += (sender, args) => ImGuiLog($"Pressed {args.Key}");
-        OnKeyReleased += (sender, args) => ImGuiLog($"Released {args.Key}");
+        
+        OnKeyDown += (_, args) => 
+                        {
+                            if (!_logDownEvent) return;
+                            ImGuiLog("OnKeyDown");
+                            ImGuiLog($"     -Key: {args.Key}");
+                        };
+        OnKeyPressed += (_, args) => 
+                           {
+                               if (!_logPressEvent) return;
+                               ImGuiLog("OnKeyPressed");
+                               ImGuiLog($"     -Key: {args.Key}");
+                           };
+        OnKeyReleased += (_, args) => 
+                            {
+                                if (!_logReleaseEvent) return;
+                                ImGuiLog("OnKeyReleased");
+                                ImGuiLog($"     -Key: {args.Key}");
+                            }; 
 
         #endregion
     }
 
     #region ImGui
 
-    private const  int          LogCapacity = 1000;
-    private static bool         _activeOnly = true;
-    private static bool         _ignoreDownEvent;
-    private static List<string> _eventLog = new(LogCapacity);
-    private static bool         _logHeader;
+    private const           int        LogCapacity     = 100;
+    private static          bool       _activeKeysOnly = true;
+    private static          bool       _logDownEvent;
+    private static          bool       _logPressEvent   = true;
+    private static          bool       _logReleaseEvent = true;
+
+    private static readonly string[] FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
+
+    private static readonly List<string> EventLog = new(LogCapacity);
+    private static          bool         _logHeader;
 
     private static void ImGuiLog(string message)
     {
         if (!_logHeader) return;
 
-        _eventLog.Add(message);
+        EventLog.Add(message);
 
-        if (_eventLog.Count >= LogCapacity)
+        if (EventLog.Count >= LogCapacity)
         {
-            _eventLog.RemoveAt(0);
+            EventLog.RemoveAt(0);
         }
     }
 
@@ -91,15 +108,27 @@ public static class GameKeyboard
             return;
         }
 
-        int  focusLost                                 = (int)_focusLostInputBehaviour;
-        bool focusLostChanged                          = ImGui.DragInt("FocusLost", ref focusLost, 0, 2);
-        if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
+        bool configHeader = ImGui.CollapsingHeader("Config");
+        
+        if (configHeader)
+        {
+            int  focusLost                                 = (int)_focusLostInputBehaviour;
+            bool focusLostChanged                          = ImGui.Combo("FocusLost Behaviour", ref focusLost, FocusLostNames, FocusLostNames.Length);
+            if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
+        }
+        
+        bool timesHeader = ImGui.CollapsingHeader("Time stamps");
+
+        if (timesHeader)
+        {
+            ImGui.Text($"Last Input: {LastInputTime}");
+        }
 
         bool keysHeader = ImGui.CollapsingHeader("Keys");
 
         if (keysHeader)
         {
-            ImGui.Checkbox("Active keys only", ref _activeOnly);
+            ImGui.Checkbox("Only active keys", ref _activeKeysOnly);
 
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
             ImGui.BeginTable("Keys", 4, flags);
@@ -115,31 +144,19 @@ public static class GameKeyboard
                 bool        pressed  = WasKeyPressed(key);
                 bool        released = WasKeyReleased(key);
 
-                if (_activeOnly && state == InputStates.Up && !released) continue;
+                if (_activeKeysOnly && state == InputStates.Up && !released) continue;
 
                 ImGui.TableNextRow();
                 ImGui.TableNextColumn();
 
-                if (IsKeyDown(key))
-                {
-                    ImGui.Text(key.ToString());
-                }
-                else
-                {
-                    ImGui.TextDisabled(key.ToString());
-                }
+                if (!IsKeyDown(key)) ImGui.BeginDisabled();
 
+                ImGui.Text(key.ToString());
                 ImGui.TableNextColumn();
-
-                if (IsKeyDown(key))
-                {
-                    ImGui.Text("Down");
-                }
-                else
-                {
-                    ImGui.TextDisabled("Up");
-                }
-
+                ImGui.Text($"{(IsKeyDown(key) ? "Down" : "Up")}");
+                
+                if (!IsKeyDown(key)) ImGui.EndDisabled();
+                
                 ImGui.TableNextColumn();
                 ImGui.Checkbox($"##{key}pressed", ref pressed);
                 ImGui.TableNextColumn();
@@ -153,14 +170,18 @@ public static class GameKeyboard
 
         if (_logHeader)
         {
-            ImGui.Checkbox("Ignore down event", ref _ignoreDownEvent);
+            ImGui.Checkbox("Log DownEvent",    ref _logDownEvent);
+            ImGui.Checkbox("Log PressEvent",   ref _logPressEvent);
+            ImGui.Checkbox("Log ReleaseEvent", ref _logReleaseEvent);
 
-            bool clearPressed = ImGui.Button("Clear");
-            if (clearPressed) _eventLog.Clear();
+            bool clearLogs = ImGui.Button("Clear");
+            if (clearLogs) EventLog.Clear();
 
-            ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle);
+            const ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar;
+            
+            ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags);
 
-            foreach (string message in _eventLog)
+            foreach (string message in EventLog)
             {
                 ImGui.Text(message);
             }
@@ -209,27 +230,40 @@ public static class GameKeyboard
 
     #region Internal methods
 
-    internal static void Update(Game game, GameTime gameTime)
+    internal static void Update(Game game)
     {
         UpdateKeyboardStates(game);
 
         /* TODO: Snapshots */
 
-        if (_previousState != _currentState)
-        {
-            LastInputTime = gameTime.TotalGameTime;
-        }
-
         // Clear previous frame's cached pressed keys.
         _allKeysDown = null;
+
+        bool receivedAnyInput = false;
 
         // Handle input handlers.
         foreach (Keys key in AllKeys)
         {
-            if (IsKeyDown(key)) OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
-            if (WasKeyPressed(key)) OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key));
-            if (WasKeyReleased(key)) OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key));
+            if (WasKeyPressed(key))
+            {
+                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key));
+                receivedAnyInput = true;
+            }
+            
+            if (IsKeyDown(key))
+            {
+                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key));
+                receivedAnyInput = true;
+            }
+
+            if (WasKeyReleased(key))
+            {
+                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key));
+                receivedAnyInput = true;
+            }
         }
+        
+        if (receivedAnyInput) LastInputTime = GameTimes.Update.TotalGameTime;
     }
 
     private static void UpdateKeyboardStates(Game game)

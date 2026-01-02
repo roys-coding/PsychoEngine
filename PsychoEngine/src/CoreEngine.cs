@@ -58,15 +58,18 @@ public class CoreEngine : Game
 
     protected override void Update(GameTime gameTime)
     {
-        GameKeyboard.Update(this, gameTime);
-        GameMouse.Update(this, gameTime);
+        GameTimes.Update = gameTime;
+        
+        GameKeyboard.Update(this);
+        GameMouse.Update(this);
 
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        // TargetElapsedTime = TimeSpan.FromSeconds(0.75f);
+        GameTimes.Draw = gameTime;
+        
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         ImGuiManager.Draw(gameTime);
