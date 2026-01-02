@@ -1,7 +1,12 @@
-﻿namespace PsychoEngine.Input;
+﻿using Microsoft.Xna.Framework.Input;
 
-internal struct ButtonExtraState
+namespace PsychoEngine.Input;
+
+internal struct MouseButtonState
 {
+    // State.
+    public InputStates InputState   { get; set; }
+
     // Dragging.
     public Point DragStartPosition  { get; set; }
     public bool  PreviousIsDragging { get; set; }

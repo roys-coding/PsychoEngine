@@ -44,6 +44,10 @@ public class CoreEngine : Game
         ImGui.DockSpaceOverViewport(dockFlags);
 
         ImGui.ShowDemoWindow();
+
+        float targetElapsed                   = (float)TargetElapsedTime.TotalMilliseconds;
+        bool  elapsedChanged                  = ImGui.SliderFloat("TargetElapsed", ref targetElapsed, 1f, 1000.0f);
+        if (elapsedChanged) TargetElapsedTime = TimeSpan.FromMilliseconds(targetElapsed);
     }
 
     protected override void Initialize()
@@ -62,6 +66,7 @@ public class CoreEngine : Game
 
     protected override void Draw(GameTime gameTime)
     {
+        // TargetElapsedTime = TimeSpan.FromSeconds(0.75f);
         GraphicsDevice.Clear(Color.CornflowerBlue);
 
         ImGuiManager.Draw(gameTime);
