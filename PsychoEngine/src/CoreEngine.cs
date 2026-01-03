@@ -31,7 +31,6 @@ public class CoreEngine : Game
         _deviceManager.SynchronizeWithVerticalRetrace = false;
         IsMouseVisible                                = false;
         Window.AllowUserResizing                      = true;
-        InactiveSleepTime                             = TimeSpan.Zero;
 
         Window.Title = windowTitle;
 
@@ -39,11 +38,6 @@ public class CoreEngine : Game
 
         ImGuiManager.OnLayout += ImGuiOnLayout;
     }
-
-    private Stopwatch _updateWatch = new();
-    private Stopwatch _drawWatch   = new();
-    private double    _measuredUpdate;
-    private double    _measuredDraw;
 
     private void ImGuiOnLayout(object? sender, EventArgs eventArgs)
     {
@@ -78,9 +72,14 @@ public class CoreEngine : Game
             if (elapsedChanged) TargetElapsedTime = TimeSpan.FromMilliseconds(targetElapsedMs);
 
             float fps        = 1000f / targetElapsedMs;
-            bool  fpsChanged = ImGui.SliderFloat("TargetFPS", ref fps, 2f, 1000);
+            bool  fpsChanged = ImGui.SliderFloat("TargetFPS", ref fps, 2f, 1000f);
 
             if (fpsChanged) TargetElapsedTime = TimeSpan.FromMilliseconds(1000f / fps);
+
+            float sleepMs        = (float)InactiveSleepTime.TotalMilliseconds;
+            bool  sleepMsChanged = ImGui.SliderFloat("InactiveMs", ref sleepMs, 0f, 1000f);
+
+            if (sleepMsChanged) InactiveSleepTime = TimeSpan.FromMilliseconds(sleepMs);
 
             ImGui.TextDisabled("Press Shift+F to reset to 60 FPS!");
 
@@ -102,11 +101,6 @@ public class CoreEngine : Game
                 _deviceManager.SynchronizeWithVerticalRetrace = vsync;
                 _deviceManager.ApplyChanges();
             }
-
-            ImGui.SeparatorText("Measured");
-
-            ImGui.Text($"Ms between updates: {_measuredUpdate / 10000} ms");
-            ImGui.Text($"Ms between draws: {_measuredDraw     / 10000} ms");
         }
 
         ImGui.End();
@@ -120,21 +114,16 @@ public class CoreEngine : Game
 
     protected override void Update(GameTime gameTime)
     {
-        _updateWatch.Stop();
-        _measuredUpdate  = _updateWatch.ElapsedTicks;
         GameTimes.Update = gameTime;
 
         GameKeyboard.Update(this);
         GameMouse.Update(this);
 
         base.Update(gameTime);
-        _updateWatch.Restart();
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        _drawWatch.Stop();
-        _measuredDraw  = _drawWatch.ElapsedTicks;
         GameTimes.Draw = gameTime;
 
         GraphicsDevice.Clear(Color.CornflowerBlue);
@@ -142,7 +131,6 @@ public class CoreEngine : Game
         ImGuiManager.Draw(gameTime);
 
         base.Draw(gameTime);
-        _drawWatch.Restart();
     }
 
     protected override void UnloadContent()
