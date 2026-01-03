@@ -213,7 +213,7 @@ public static class GameMouse
             bool moved = Moved;
 
             ImGui.Text($"Position: {Position}");
-            ImGui.Text($"Previous Posisiton: {PreviousPosition}");
+            ImGui.Text($"Previous Position: {PreviousPosition}");
             ImGui.Text($"Position Delta: {PositionDelta}");
             ImGui.Checkbox("Moved", ref moved);
         }

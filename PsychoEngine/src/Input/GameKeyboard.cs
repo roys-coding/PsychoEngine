@@ -193,7 +193,9 @@ public static class GameKeyboard
             ImGui.TreePop();
         }
 
-        if (ImGui.CollapsingHeader("Events log"))
+        _logHeader = ImGui.CollapsingHeader("Events log"); 
+
+        if (_logHeader)
         {
             ImGui.Checkbox("Log DownEvent",    ref _logDownEvent);
             ImGui.Checkbox("Log PressEvent",   ref _logPressEvent);
