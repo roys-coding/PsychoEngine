@@ -1,5 +1,6 @@
 ﻿using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Input;
+using PsychoEngine.Utilities;
 
 namespace PsychoEngine.Input;
 
