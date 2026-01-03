@@ -124,9 +124,7 @@ public static class GameKeyboard
             return;
         }
 
-        bool configHeader = ImGui.CollapsingHeader("Config");
-
-        if (configHeader)
+        if (ImGui.CollapsingHeader("Config"))
         {
             int focusLost = (int)_focusLostInputBehaviour;
 
@@ -136,58 +134,66 @@ public static class GameKeyboard
             if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
         }
 
-        bool timesHeader = ImGui.CollapsingHeader("Time stamps");
-
-        if (timesHeader)
+        if (ImGui.CollapsingHeader("Time stamps"))
         {
             ImGui.Text($"Last Input: {LastInputTime}");
         }
 
-        bool keysHeader = ImGui.CollapsingHeader("Keys");
-
-        if (keysHeader)
+        if (ImGui.CollapsingHeader("Keys"))
         {
-            ImGui.Checkbox("Only active keys", ref _activeKeysOnly);
-
-            const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
-            ImGui.BeginTable("Keys", 4, flags);
-            ImGui.TableSetupColumn("Key");
-            ImGui.TableSetupColumn("State");
-            ImGui.TableSetupColumn("Pressed");
-            ImGui.TableSetupColumn("Released");
-            ImGui.TableHeadersRow();
-
-            foreach (Keys key in AllKeys)
+            ImGui.TreePush("Keys");
+            
+            if (ImGui.CollapsingHeader("All keys down"))
             {
-                InputStates state    = GetKey(key);
-                bool        pressed  = WasKeyPressed(key);
-                bool        released = WasKeyReleased(key);
-
-                if (_activeKeysOnly && state == InputStates.Up && !released) continue;
-
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-
-                if (!IsKeyDown(key)) ImGui.BeginDisabled();
-
-                ImGui.Text(key.ToString());
-                ImGui.TableNextColumn();
-                ImGui.Text($"{(IsKeyDown(key) ? "Down" : "Up")}");
-
-                if (!IsKeyDown(key)) ImGui.EndDisabled();
-
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{key}pressed", ref pressed);
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{key}released", ref released);
+                string keys = string.Join(", ", AllKeysDown);
+                ImGui.Text(keys);
+                ImGui.Separator();
             }
 
-            ImGui.EndTable();
+            if (ImGui.CollapsingHeader("Key states"))
+            {
+                ImGui.Checkbox("Only active keys", ref _activeKeysOnly);
+
+                const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
+                ImGui.BeginTable("Keys", 4, flags);
+                ImGui.TableSetupColumn("Key");
+                ImGui.TableSetupColumn("State");
+                ImGui.TableSetupColumn("Pressed");
+                ImGui.TableSetupColumn("Released");
+                ImGui.TableHeadersRow();
+
+                foreach (Keys key in AllKeys)
+                {
+                    InputStates state    = GetKey(key);
+                    bool        pressed  = WasKeyPressed(key);
+                    bool        released = WasKeyReleased(key);
+
+                    if (_activeKeysOnly && state == InputStates.Up && !released) continue;
+
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+
+                    if (!IsKeyDown(key)) ImGui.BeginDisabled();
+
+                    ImGui.Text(key.ToString());
+                    ImGui.TableNextColumn();
+                    ImGui.Text($"{(IsKeyDown(key) ? "Down" : "Up")}");
+
+                    if (!IsKeyDown(key)) ImGui.EndDisabled();
+
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{key}pressed", ref pressed);
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{key}released", ref released);
+                }
+
+                ImGui.EndTable();
+            }
+            
+            ImGui.TreePop();
         }
 
-        _logHeader = ImGui.CollapsingHeader("Events log");
-
-        if (_logHeader)
+        if (ImGui.CollapsingHeader("Events log"))
         {
             ImGui.Checkbox("Log DownEvent",    ref _logDownEvent);
             ImGui.Checkbox("Log PressEvent",   ref _logPressEvent);

@@ -192,9 +192,7 @@ public static class GameMouse
             return;
         }
 
-        bool configHeader = ImGui.CollapsingHeader("Config");
-
-        if (configHeader)
+        if (ImGui.CollapsingHeader("Config"))
         {
             int focusLost = (int)_focusLostInputBehaviour;
 
@@ -204,17 +202,13 @@ public static class GameMouse
             if (focusLostChanged) _focusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
         }
 
-        bool timesHeader = ImGui.CollapsingHeader("Time stamps");
-
-        if (timesHeader)
+        if (ImGui.CollapsingHeader("Time stamps"))
         {
             ImGui.Text($"Last Movement: {LastMoveTime}");
             ImGui.Text($"Last Input: {LastInputTime}");
         }
 
-        bool movementHeader = ImGui.CollapsingHeader("Movement");
-
-        if (movementHeader)
+        if (ImGui.CollapsingHeader("Movement"))
         {
             bool moved = Moved;
 
@@ -224,9 +218,7 @@ public static class GameMouse
             ImGui.Checkbox("Moved", ref moved);
         }
 
-        bool scrollHeader = ImGui.CollapsingHeader("Scroll");
-
-        if (scrollHeader)
+        if (ImGui.CollapsingHeader("Scroll"))
         {
             bool scrolled = Scrolled;
 
@@ -236,9 +228,7 @@ public static class GameMouse
             ImGui.Checkbox("Scrolled", ref scrolled);
         }
 
-        bool buttonsHeader = ImGui.CollapsingHeader("Buttons");
-
-        if (buttonsHeader)
+        if (ImGui.CollapsingHeader("Buttons"))
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
             ImGui.BeginTable("Buttons", 4, flags);
@@ -272,9 +262,7 @@ public static class GameMouse
             ImGui.EndTable();
         }
 
-        bool dragHeader = ImGui.CollapsingHeader("Dragging");
-
-        if (dragHeader)
+        if (ImGui.CollapsingHeader("Dragging"))
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
             ImGui.BeginTable("Dragging", 5, flags);
@@ -313,9 +301,7 @@ public static class GameMouse
             ImGui.EndTable();
         }
 
-        bool clicksHeader = ImGui.CollapsingHeader("Multi clicking");
-
-        if (clicksHeader)
+        if (ImGui.CollapsingHeader("Multi clicking"))
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
             ImGui.BeginTable("Multi clicking", 4, flags);
