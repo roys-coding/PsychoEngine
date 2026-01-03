@@ -6,16 +6,16 @@ using PsychoEngine.Input;
 
 namespace PsychoEngine;
 
-public class PsychoGame : Game
+public class PyGame : Game
 {
     private readonly GraphicsDeviceManager _deviceManager;
 
     [AllowNull]
-    public static PsychoGame Instance { get; private set; }
+    public static PyGame Instance { get; private set; }
 
     public ImGuiManager ImGuiManager { get; }
 
-    public PsychoGame(string windowTitle, int windowWidth, int windowHeight)
+    public PyGame(string windowTitle, int windowWidth, int windowHeight)
     {
         if (Instance is not null)
         {

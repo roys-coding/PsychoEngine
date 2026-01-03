@@ -68,7 +68,7 @@ public static class PyMouse
 
         #region ImGui
 
-        PsychoGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+        PyGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
         OnMoved += (_, args) =>
                    {

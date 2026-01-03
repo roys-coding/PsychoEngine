@@ -7,7 +7,7 @@ public static class Program
 {
     public static void Main()
     {
-        using PsychoGame engine = new("Sample Game", 1000, 600);
+        using PyGame engine = new("Sample Game", 1000, 600);
         engine.Run();
     }
 }

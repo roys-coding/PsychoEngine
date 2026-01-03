@@ -62,7 +62,7 @@ public static class PyKeyboard
 
         #region ImGui
 
-        PsychoGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+        PyGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
         OnKeyDown += (_, args) =>
                      {
