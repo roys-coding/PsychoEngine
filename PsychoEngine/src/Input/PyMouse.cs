@@ -4,7 +4,7 @@ using PsychoEngine.Utilities;
 
 namespace PsychoEngine.Input;
 
-public static class Mouse
+public static class PyMouse
 {
     // TODO: Implement FNA Click ext.
 
@@ -62,13 +62,13 @@ public static class Mouse
     public static float ScrollDelta         { get; private set; }
     public static bool  Scrolled            { get; private set; }
 
-    static Mouse()
+    static PyMouse()
     {
         AllButtons = Enum.GetValues<MouseButtons>();
 
         #region ImGui
 
-        CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+        PsychoGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
         OnMoved += (_, args) =>
                    {
@@ -183,7 +183,7 @@ public static class Mouse
 
     private static void ImGuiOnLayout(object? sender, EventArgs args)
     {
-        bool windowOpen = ImGui.Begin($"{Fonts.Lucide.Mouse} Mouse");
+        bool windowOpen = ImGui.Begin($"{PyFonts.Lucide.Mouse} Mouse");
 
         if (!windowOpen)
         {
@@ -467,9 +467,9 @@ public static class Mouse
                             new MouseMovedEventArgs(PreviousPosition,
                                                     Position,
                                                     PositionDelta,
-                                                    Keyboard.ModifierKeys));
+                                                    PyKeyboard.ModifierKeys));
 
-            LastMoveTime = GameTimes.Update.TotalGameTime;
+            LastMoveTime = PyGameTimes.Update.TotalGameTime;
         }
 
         // Scroll.
@@ -484,9 +484,9 @@ public static class Mouse
                                new MouseScrolledEventArgs(ScrollValue,
                                                           ScrollDelta,
                                                           Position,
-                                                          Keyboard.ModifierKeys));
+                                                          PyKeyboard.ModifierKeys));
 
-            LastInputTime = GameTimes.Update.TotalGameTime;
+            LastInputTime = PyGameTimes.Update.TotalGameTime;
         }
 
         // Input state and dragging.
@@ -565,11 +565,11 @@ public static class Mouse
                     inputState |= InputStates.Pressed;
 
                     OnButtonPressed?.Invoke(null,
-                                            new MouseButtonEventArgs(button, Position, Keyboard.ModifierKeys));
+                                            new MouseButtonEventArgs(button, Position, PyKeyboard.ModifierKeys));
                 }
 
                 inputState |= InputStates.Down;
-                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, Keyboard.ModifierKeys));
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, PyKeyboard.ModifierKeys));
 
                 receivedAnyInput = true;
                 break;
@@ -584,7 +584,7 @@ public static class Mouse
                     inputState |= InputStates.Released;
 
                     OnButtonReleased?.Invoke(null,
-                                             new MouseButtonEventArgs(button, Position, Keyboard.ModifierKeys));
+                                             new MouseButtonEventArgs(button, Position, PyKeyboard.ModifierKeys));
 
                     receivedAnyInput = true;
                 }
@@ -597,7 +597,7 @@ public static class Mouse
 
         state.InputState = inputState;
 
-        if (receivedAnyInput) LastInputTime = GameTimes.Update.TotalGameTime;
+        if (receivedAnyInput) LastInputTime = PyGameTimes.Update.TotalGameTime;
     }
 
     private static void UpdateButtonDragging(MouseButtons button, ref MouseButtonState state)
@@ -620,7 +620,7 @@ public static class Mouse
                                        new MouseDraggedEventArgs(button,
                                                                  state.DragStartPosition,
                                                                  Position,
-                                                                 Keyboard.ModifierKeys));
+                                                                 PyKeyboard.ModifierKeys));
             }
 
             state.DragStartPosition = Point.Zero;
@@ -639,7 +639,7 @@ public static class Mouse
                                       new MouseDraggedEventArgs(button,
                                                                 state.DragStartPosition,
                                                                 Position,
-                                                                Keyboard.ModifierKeys));
+                                                                PyKeyboard.ModifierKeys));
             }
         }
 
@@ -649,7 +649,7 @@ public static class Mouse
                                new MouseDraggedEventArgs(button,
                                                          state.DragStartPosition,
                                                          Position,
-                                                         Keyboard.ModifierKeys));
+                                                         PyKeyboard.ModifierKeys));
         }
     }
 
@@ -657,7 +657,7 @@ public static class Mouse
     {
         if (WasButtonPressed(button))
         {
-            TimeSpan timeSinceLastClick = GameTimes.Update.TotalGameTime - state.LastPressTime;
+            TimeSpan timeSinceLastClick = PyGameTimes.Update.TotalGameTime - state.LastPressTime;
 
             if (timeSinceLastClick.TotalSeconds <= ConsecutiveClickThresholdSeconds)
             {
@@ -667,14 +667,14 @@ public static class Mouse
                                      new MouseMultiClickEventArgs(button,
                                                                   state.ConsecutiveClicks,
                                                                   Position,
-                                                                  Keyboard.ModifierKeys));
+                                                                  PyKeyboard.ModifierKeys));
             }
             else
             {
                 state.ConsecutiveClicks = 0;
             }
 
-            state.LastPressTime = GameTimes.Update.TotalGameTime;
+            state.LastPressTime = PyGameTimes.Update.TotalGameTime;
         }
     }
 

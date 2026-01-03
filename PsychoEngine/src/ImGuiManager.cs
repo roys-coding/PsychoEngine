@@ -257,7 +257,7 @@ public class ImGuiManager
 
         #region ImGui fonts
 
-        GlyphRanges iconsFontRanges = new(Fonts.Lucide.IconMin, Fonts.Lucide.IconMax, 0);
+        GlyphRanges iconsFontRanges = new(PyFonts.Lucide.IconMin, PyFonts.Lucide.IconMax, 0);
 
         // Base font config.
         ImFontConfigPtr fontConfig = ImGui.ImFontConfig();
@@ -272,8 +272,8 @@ public class ImGuiManager
         iconsFontConfig.GlyphOffset      = new Vector2(0f, 3f);
 
         // Load fonts.
-        fonts.AddFontFromFileTTF($"{FontsPath}{Fonts.Bfont.FileName}",            fontConfig);
-        fonts.AddFontFromFileTTF($"{FontsPath}{Fonts.Lucide.FontIconFileNameLC}", iconsFontConfig);
+        fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Bfont.FileName}",            fontConfig);
+        fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Lucide.FontIconFileNameLC}", iconsFontConfig);
 
         #endregion
     }

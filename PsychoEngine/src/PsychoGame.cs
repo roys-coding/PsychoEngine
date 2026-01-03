@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImPlot;
@@ -7,16 +6,16 @@ using PsychoEngine.Input;
 
 namespace PsychoEngine;
 
-public class CoreEngine : Game
+public class PsychoGame : Game
 {
     private readonly GraphicsDeviceManager _deviceManager;
 
     [AllowNull]
-    public static CoreEngine Instance { get; private set; }
+    public static PsychoGame Instance { get; private set; }
 
     public ImGuiManager ImGuiManager { get; }
 
-    public CoreEngine(string windowTitle, int windowWidth, int windowHeight)
+    public PsychoGame(string windowTitle, int windowWidth, int windowHeight)
     {
         if (Instance is not null)
         {
@@ -114,17 +113,18 @@ public class CoreEngine : Game
 
     protected override void Update(GameTime gameTime)
     {
-        GameTimes.Update = gameTime;
+        PyGameTimes.Update = gameTime;
 
-        Keyboard.Update(this);
-        Mouse.Update(this);
+        PyMouse.Update(this);
+        PyKeyboard.Update(this);
+        PyGamePads.Update(this);
 
         base.Update(gameTime);
     }
 
     protected override void Draw(GameTime gameTime)
     {
-        GameTimes.Draw = gameTime;
+        PyGameTimes.Draw = gameTime;
 
         GraphicsDevice.Clear(Color.CornflowerBlue);
 

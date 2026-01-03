@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace PsychoEngine.Input;
 
-public static class Keyboard
+public static class PyKeyboard
 {
     // Events.
     public static event EventHandler<KeyboardEventArgs>? OnKeyDown;
@@ -56,13 +56,13 @@ public static class Keyboard
         }
     }
 
-    static Keyboard()
+    static PyKeyboard()
     {
         AllKeys = Enum.GetValues<Keys>();
 
         #region ImGui
 
-        CoreEngine.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+        PsychoGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
 
         OnKeyDown += (_, args) =>
                      {
@@ -115,7 +115,7 @@ public static class Keyboard
 
     private static void ImGuiOnLayout(object? sender, EventArgs args)
     {
-        bool windowOpen = ImGui.Begin($"{Fonts.Lucide.Keyboard} Keyboard ");
+        bool windowOpen = ImGui.Begin($"{PyFonts.Lucide.Keyboard} Keyboard ");
 
         if (!windowOpen)
         {
@@ -288,7 +288,7 @@ public static class Keyboard
             }
         }
 
-        if (receivedAnyInput) LastInputTime = GameTimes.Update.TotalGameTime;
+        if (receivedAnyInput) LastInputTime = PyGameTimes.Update.TotalGameTime;
     }
 
     private static void UpdateKeyboardStates(Game game)
