@@ -1,4 +1,4 @@
-﻿namespace PsychoEngine.Utils;
+﻿namespace PsychoEngine.Utilities;
 
 public static class MathExtensionMethods
 {

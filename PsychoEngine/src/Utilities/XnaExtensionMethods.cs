@@ -1,7 +1,7 @@
 ﻿using Microsoft.Xna.Framework.Input;
 using PsychoEngine.Input;
 
-namespace PsychoEngine.Utils;
+namespace PsychoEngine.Utilities;
 
 public static class XnaExtensionMethods
 {
