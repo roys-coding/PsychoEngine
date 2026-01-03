@@ -142,7 +142,7 @@ public static class GameKeyboard
         if (ImGui.CollapsingHeader("Keys"))
         {
             ImGui.TreePush("Keys");
-            
+
             if (ImGui.CollapsingHeader("All keys down"))
             {
                 string keys = string.Join(", ", AllKeysDown);
@@ -189,11 +189,11 @@ public static class GameKeyboard
 
                 ImGui.EndTable();
             }
-            
+
             ImGui.TreePop();
         }
 
-        _logHeader = ImGui.CollapsingHeader("Events log"); 
+        _logHeader = ImGui.CollapsingHeader("Events log");
 
         if (_logHeader)
         {
