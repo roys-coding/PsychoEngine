@@ -116,8 +116,8 @@ public class CoreEngine : Game
     {
         GameTimes.Update = gameTime;
 
-        GameKeyboard.Update(this);
-        GameMouse.Update(this);
+        Keyboard.Update(this);
+        Mouse.Update(this);
 
         base.Update(gameTime);
     }

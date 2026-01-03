@@ -4,7 +4,7 @@ using PsychoEngine.Utilities;
 
 namespace PsychoEngine.Input;
 
-public static class GameMouse
+public static class Mouse
 {
     // TODO: Implement FNA Click ext.
 
@@ -62,7 +62,7 @@ public static class GameMouse
     public static float ScrollDelta         { get; private set; }
     public static bool  Scrolled            { get; private set; }
 
-    static GameMouse()
+    static Mouse()
     {
         AllButtons = Enum.GetValues<MouseButtons>();
 
@@ -467,7 +467,7 @@ public static class GameMouse
                             new MouseMovedEventArgs(PreviousPosition,
                                                     Position,
                                                     PositionDelta,
-                                                    GameKeyboard.ModifierKeys));
+                                                    Keyboard.ModifierKeys));
 
             LastMoveTime = GameTimes.Update.TotalGameTime;
         }
@@ -484,7 +484,7 @@ public static class GameMouse
                                new MouseScrolledEventArgs(ScrollValue,
                                                           ScrollDelta,
                                                           Position,
-                                                          GameKeyboard.ModifierKeys));
+                                                          Keyboard.ModifierKeys));
 
             LastInputTime = GameTimes.Update.TotalGameTime;
         }
@@ -508,7 +508,7 @@ public static class GameMouse
         {
             // Update input state normally.
             _previousState = _currentState;
-            _currentState  = Mouse.GetState();
+            _currentState  = Microsoft.Xna.Framework.Input.Mouse.GetState();
 
             return;
         }
@@ -539,7 +539,7 @@ public static class GameMouse
             case FocusLostInputBehaviour.KeepUpdating:
                 // Update input state normally.
                 _previousState = _currentState;
-                _currentState  = Mouse.GetState();
+                _currentState  = Microsoft.Xna.Framework.Input.Mouse.GetState();
                 break;
 
             default:
@@ -565,11 +565,11 @@ public static class GameMouse
                     inputState |= InputStates.Pressed;
 
                     OnButtonPressed?.Invoke(null,
-                                            new MouseButtonEventArgs(button, Position, GameKeyboard.ModifierKeys));
+                                            new MouseButtonEventArgs(button, Position, Keyboard.ModifierKeys));
                 }
 
                 inputState |= InputStates.Down;
-                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, GameKeyboard.ModifierKeys));
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, Keyboard.ModifierKeys));
 
                 receivedAnyInput = true;
                 break;
@@ -584,7 +584,7 @@ public static class GameMouse
                     inputState |= InputStates.Released;
 
                     OnButtonReleased?.Invoke(null,
-                                             new MouseButtonEventArgs(button, Position, GameKeyboard.ModifierKeys));
+                                             new MouseButtonEventArgs(button, Position, Keyboard.ModifierKeys));
 
                     receivedAnyInput = true;
                 }
@@ -620,7 +620,7 @@ public static class GameMouse
                                        new MouseDraggedEventArgs(button,
                                                                  state.DragStartPosition,
                                                                  Position,
-                                                                 GameKeyboard.ModifierKeys));
+                                                                 Keyboard.ModifierKeys));
             }
 
             state.DragStartPosition = Point.Zero;
@@ -639,7 +639,7 @@ public static class GameMouse
                                       new MouseDraggedEventArgs(button,
                                                                 state.DragStartPosition,
                                                                 Position,
-                                                                GameKeyboard.ModifierKeys));
+                                                                Keyboard.ModifierKeys));
             }
         }
 
@@ -649,7 +649,7 @@ public static class GameMouse
                                new MouseDraggedEventArgs(button,
                                                          state.DragStartPosition,
                                                          Position,
-                                                         GameKeyboard.ModifierKeys));
+                                                         Keyboard.ModifierKeys));
         }
     }
 
@@ -667,7 +667,7 @@ public static class GameMouse
                                      new MouseMultiClickEventArgs(button,
                                                                   state.ConsecutiveClicks,
                                                                   Position,
-                                                                  GameKeyboard.ModifierKeys));
+                                                                  Keyboard.ModifierKeys));
             }
             else
             {

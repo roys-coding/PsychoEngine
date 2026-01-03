@@ -3,7 +3,7 @@ using Microsoft.Xna.Framework.Input;
 
 namespace PsychoEngine.Input;
 
-public static class GameKeyboard
+public static class Keyboard
 {
     // Events.
     public static event EventHandler<KeyboardEventArgs>? OnKeyDown;
@@ -56,7 +56,7 @@ public static class GameKeyboard
         }
     }
 
-    static GameKeyboard()
+    static Keyboard()
     {
         AllKeys = Enum.GetValues<Keys>();
 
@@ -297,7 +297,7 @@ public static class GameKeyboard
         {
             // Update input state normally.
             _previousState = _currentState;
-            _currentState  = Keyboard.GetState();
+            _currentState  = Microsoft.Xna.Framework.Input.Keyboard.GetState();
 
             return;
         }
@@ -318,7 +318,7 @@ public static class GameKeyboard
             case FocusLostInputBehaviour.KeepUpdating:
                 // Update input state normally.
                 _previousState = _currentState;
-                _currentState  = Keyboard.GetState();
+                _currentState  = Microsoft.Xna.Framework.Input.Keyboard.GetState();
                 break;
 
             default:
