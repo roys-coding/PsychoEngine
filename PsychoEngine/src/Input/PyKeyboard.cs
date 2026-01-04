@@ -11,17 +11,17 @@ public static class PyKeyboard
     public static event EventHandler<KeyboardEventArgs>? OnKeyReleased;
 
     // Constants.
-    public static readonly Keys[] AllKeys;
+    private static readonly Keys[] AllKeys;
 
     // Config.
     private static FocusLostInputBehaviour _focusLostInputBehaviour;
 
-    // Input states.
+    // States.
     private static KeyboardState _currentState;
     private static KeyboardState _previousState;
     private static Keys[]?       _allKeysDown;
 
-    // Input time stamps.
+    // Time stamps.
     public static TimeSpan LastInputTime { get; private set; }
 
     public static Keys[] AllKeysDown

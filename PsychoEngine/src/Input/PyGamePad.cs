@@ -6,18 +6,33 @@ namespace PsychoEngine.Input;
 public class PyGamePad
 {
     // Todo: implement FNA Ext (gyro, rumble, etc)
-
+    // TODO: implement events.
     private readonly PlayerIndex  _playerIndex;
+    
+    // States.
     private          GamePadState _previousState;
     private          GamePadState _currentState;
 
-    public bool IsConnected => _currentState.IsConnected;
+    public bool IsConnected => GamePad.GetState(_playerIndex).IsConnected;
 
+    // Time stamps.
     public TimeSpan LastInputTime { get; private set; }
 
-    public PyGamePad(PlayerIndex playerIndex)
+    internal PyGamePad(PlayerIndex playerIndex)
     {
         _playerIndex = playerIndex;
+    }
+    
+    public InputStates GetButton(GamePadButtons button)
+    {
+        InputStates inputState = InputStates.None;
+
+        if (IsButtonUp(button)) inputState        |= InputStates.Up;
+        if (IsButtonDown(button)) inputState      |= InputStates.Down;
+        if (WasButtonPressed(button)) inputState  |= InputStates.Pressed;
+        if (WasButtonReleased(button)) inputState |= InputStates.Released;
+
+        return inputState;
     }
 
     public bool IsButtonUp(GamePadButtons button)
@@ -65,6 +80,17 @@ public class PyGamePad
                    GamePadThumbsticks.Left => _currentState.ThumbSticks.Left,
                    GamePadThumbsticks.Right => _currentState.ThumbSticks.Right,
                    _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
+               };
+    }
+
+    public InputStates GetButtonThumbstick(GamePadThumbsticks thumbstick)
+    {
+        return thumbstick switch
+               {
+                   GamePadThumbsticks.None => InputStates.Up,
+                   GamePadThumbsticks.Left => GetButton(GamePadButtons.LeftThumb),
+                   GamePadThumbsticks.Right => GetButton(GamePadButtons.RightThumb),
+                   _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported.")
                };
     }
 
@@ -117,6 +143,8 @@ public class PyGamePad
         return GamePad.SetVibration(_playerIndex, leftMotor, rightMotor);
     }
 
+    #region Internal methods
+
     internal void Update(Game game)
     {
         if (game.IsActive && !ImGui.GetIO().WantCaptureKeyboard)
@@ -155,6 +183,7 @@ public class PyGamePad
         if (_previousState != _currentState)
         {
             LastInputTime = PyGameTimes.Update.TotalGameTime;
+            // BUG: Last input time not detected correctly.
         }
     }
 
@@ -181,4 +210,6 @@ public class PyGamePad
                    _ => throw new InvalidOperationException($"Button '{button}' not supported."),
                };
     }
+
+    #endregion
 }

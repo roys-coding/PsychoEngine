@@ -7,23 +7,33 @@ namespace PsychoEngine.Input;
 
 public static class PyGamePads
 {
-    public static readonly PlayerIndex[] AllPlayers;
-    public static readonly int           SupportedPlayersCount;
+    // Constants.
+    public static readonly int SupportedPlayersCount;
 
+    private static readonly PlayerIndex[]    PlayersEnum;
+    private static readonly GamePadButtons[] ButtonsEnum;
+
+    // GamePad states.
     private static readonly IDictionary<PlayerIndex, PyGamePad> GamePads;
-    internal static          FocusLostInputBehaviour FocusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
+    
+    // Config.
+    internal static FocusLostInputBehaviour FocusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
 
+    // GamePad states.
     public static bool        IsAnyConnected       { get; private set; }
+    
+    // Time stamps. 
     public static TimeSpan    LastInputTime        { get; private set; }
     public static PlayerIndex LastInputPlayerIndex { get; private set; }
 
     static PyGamePads()
     {
-        AllPlayers            = Enum.GetValues<PlayerIndex>();
-        SupportedPlayersCount = AllPlayers.Length;
+        PlayersEnum            = Enum.GetValues<PlayerIndex>();
+        ButtonsEnum            = Enum.GetValues<GamePadButtons>();
+        SupportedPlayersCount = PlayersEnum.Length;
         GamePads              = new Dictionary<PlayerIndex, PyGamePad>(SupportedPlayersCount);
 
-        foreach (PlayerIndex player in AllPlayers)
+        foreach (PlayerIndex player in PlayersEnum)
         {
             GamePads.Add(player, new PyGamePad(player));
         }
@@ -36,11 +46,11 @@ public static class PyGamePads
     }
 
     #region ImGui
+    private static readonly string[]         PlayerNames    = Enum.GetNames<PlayerIndex>();
+    private static readonly string[]         FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
 
-    private static          GamePadButtons[] AllButtons => Enum.GetValues<GamePadButtons>();
-    private static readonly string[]         PlayerNames = Enum.GetNames<PlayerIndex>();
-
-    private static int _player;
+    private static int _playerIndex;
+    private static bool _activeButtonsOnly = true;
 
     private static void ImGuiLayout(object? sender, EventArgs eventArgs)
     {
@@ -52,13 +62,32 @@ public static class PyGamePads
             return;
         }
 
-        ImGui.Combo("Player", ref _player, PlayerNames, PlayerNames.Length);
-        PyGamePad player = GetPlayer((PlayerIndex)_player);
+        ImGui.Combo("Player", ref _playerIndex, PlayerNames, PlayerNames.Length);
+        PyGamePad player = GetPlayer((PlayerIndex)_playerIndex);
 
         ImGui.Text($"Connected: {player.IsConnected}");
 
+        if (ImGui.CollapsingHeader("Config"))
+        {
+            int focusLost = (int)FocusLostInputBehaviour;
+
+            bool focusLostChanged =
+                ImGui.Combo("FocusLost Behaviour", ref focusLost, FocusLostNames, FocusLostNames.Length);
+
+            if (focusLostChanged) FocusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
+        }
+
+        if (ImGui.CollapsingHeader("Time stamps"))
+        {
+            ImGui.Text($"Last Input Any: {LastInputTime}");
+            ImGui.Text($"Last Input Player: {LastInputPlayerIndex}");
+            ImGui.Text($"Last Input Player {_playerIndex}: {player.LastInputTime}");
+        }
+
         if (ImGui.CollapsingHeader("Buttons"))
         {
+            ImGui.Checkbox("Only active keys", ref _activeButtonsOnly);
+            
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
 
             if (ImGui.BeginTable("Buttons", 4, flags))
@@ -69,8 +98,10 @@ public static class PyGamePads
                 ImGui.TableSetupColumn("Released");
                 ImGui.TableHeadersRow();
 
-                foreach (GamePadButtons button in AllButtons)
+                foreach (GamePadButtons button in ButtonsEnum)
                 {
+                    if (_activeButtonsOnly && player.GetButton((button)) == InputStates.Up) continue;
+                    
                     bool pressed  = player.WasButtonPressed(button);
                     bool released = player.WasButtonReleased(button);
 
@@ -274,11 +305,20 @@ public static class PyGamePads
         return GetPlayer(playerIndex).IsConnected;
     }
 
+    #region Internal methods
+
     internal static void Update(Game game)
     {
         foreach (PyGamePad gamePad in GamePads.Values)
         {
             gamePad.Update(game);
+
+            if (gamePad.LastInputTime > LastInputTime)
+            {
+                LastInputTime = gamePad.LastInputTime;
+            }
         }
     }
+
+    #endregion
 }

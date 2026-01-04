@@ -36,7 +36,7 @@ public static class PyMouse
     private const  double                  ConsecutiveClickThresholdSeconds = 0.5;
     private static FocusLostInputBehaviour _focusLostInputBehaviour         = FocusLostInputBehaviour.ClearState;
 
-    // Mouse states.
+    // States.
     private static MouseState _previousState;
     private static MouseState _currentState;
 
@@ -47,7 +47,7 @@ public static class PyMouse
     private static MouseButtonState _x1Button;
     private static MouseButtonState _x2Button;
 
-    // Input time stamps.
+    // Time stamps.
     public static TimeSpan LastMoveTime  { get; private set; }
     public static TimeSpan LastInputTime { get; private set; }
 
