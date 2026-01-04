@@ -2,7 +2,7 @@
 
 public enum FocusLostInputBehaviour
 {
-    ClearStates   = 0,
-    FreezeStates  = 1,
-    KeepUpdating  = 2,
+    ClearStates  = 0,
+    FreezeStates = 1,
+    KeepUpdating = 2,
 }

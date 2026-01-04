@@ -10,7 +10,7 @@ public static class PyGamePads
     // Constants.
     public static readonly int SupportedPlayersCount;
 
-    private static readonly PlayerIndex[]    PlayersEnum;
+    private static readonly PlayerIndex[]   PlayersEnum;
     private static readonly GamePadButton[] ButtonsEnum;
 
     // GamePad states.

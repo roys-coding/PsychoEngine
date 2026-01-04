@@ -68,7 +68,7 @@ public class PyGamePad
                    GamePadTrigger.None  => 0f,
                    GamePadTrigger.Left  => _currentState.Triggers.Left,
                    GamePadTrigger.Right => _currentState.Triggers.Right,
-                   _                     => throw new InvalidOperationException($"Trigger '{trigger}' not supported."),
+                   _                    => throw new InvalidOperationException($"Trigger '{trigger}' not supported."),
                };
     }
 

@@ -2,7 +2,6 @@
 using Hexa.NET.ImPlot;
 using Microsoft.Xna.Framework.Input;
 using PsychoEngine.Utilities;
-
 using NVector2 = System.Numerics.Vector2;
 
 namespace PsychoEngine.Input;
@@ -220,10 +219,10 @@ public static class PyMouse
             ImGui.Text($"Previous Position: {PreviousPosition}");
             ImGui.Text($"Position Delta: {PositionDelta}");
             ImGui.Checkbox("Moved", ref moved);
-            
+
             ImGui.Spacing();
             bool resetViewPressed = ImGui.Button("Reset view");
-            
+
             const ImPlotFlags plotFlags = ImPlotFlags.NoTitle | ImPlotFlags.NoMenus;
 
             const ImPlotAxisFlags axesFlags =
@@ -231,26 +230,32 @@ public static class PyMouse
 
             NVector2 displaySize = ImGui.GetIO().DisplaySize;
             float    ratio       = displaySize.X / displaySize.Y;
-            NVector2 plotSize    = new NVector2(400);
+            NVector2 plotSize    = new(400);
             plotSize.Y /= ratio;
 
             if (ImPlot.BeginPlot("Movement##plot", plotSize, plotFlags))
             {
                 ImPlot.SetupAxes("x", "y", axesFlags, axesFlags);
-                ImPlot.SetupAxesLimits(0, displaySize.X, 0, -displaySize.Y, resetViewPressed ? ImPlotCond.Always : ImPlotCond.Once);
+
+                ImPlot.SetupAxesLimits(0,
+                                       displaySize.X,
+                                       0,
+                                       -displaySize.Y,
+                                       resetViewPressed ? ImPlotCond.Always : ImPlotCond.Once);
 
                 ImDrawListPtr drawList    = ImPlot.GetPlotDrawList();
                 uint          rectColor   = ImGui.GetColorU32(ImGuiCol.Separator);
                 uint          circleColor = ImGui.GetColorU32(ImGuiCol.Text);
-                NVector2      rectMin     = ImPlot.PlotToPixels(new ImPlotPoint(0f,            0f));
+                NVector2      rectMin     = ImPlot.PlotToPixels(new ImPlotPoint(0f));
                 NVector2      rectMax     = ImPlot.PlotToPixels(new ImPlotPoint(displaySize.X, -displaySize.Y));
                 NVector2      mousePos    = ImPlot.PlotToPixels(new ImPlotPoint(Position.X,    -Position.Y));
-                Vector2      mouseDir    = PositionDelta.ToVector();
+                Vector2       mouseDir    = PositionDelta.ToVector();
                 mouseDir.Normalize();
                 NVector2 mouseDirN        = mouseDir.ToNumerics();
-                NVector2 directionLineEnd = mousePos + (mouseDirN * 20);
-                
-                ImPlot.PushPlotClipRect();;
+                NVector2 directionLineEnd = mousePos + mouseDirN * 20;
+
+                ImPlot.PushPlotClipRect();
+                ;
                 drawList.AddRect(rectMin, rectMax, rectColor);
 
                 if (Moved)
@@ -261,11 +266,11 @@ public static class PyMouse
                 {
                     drawList.AddCircle(mousePos, 4f, circleColor, 20);
                 }
-                
+
                 drawList.AddLine(mousePos, directionLineEnd, circleColor);
-                
+
                 ImPlot.PopPlotClipRect();
-                
+
                 ImPlot.EndPlot();
             }
         }
@@ -750,7 +755,7 @@ public static class PyMouse
                    MouseButton.Right  => _rightButton,
                    MouseButton.X1     => _x1Button,
                    MouseButton.X2     => _x2Button,
-                   _                   => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
+                   _                  => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
                };
     }
 
