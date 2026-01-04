@@ -7,11 +7,11 @@ public class PyGamePad
 {
     // Todo: implement FNA Ext (gyro, rumble, etc)
     // TODO: implement events.
-    private readonly PlayerIndex  _playerIndex;
-    
+    private readonly PlayerIndex _playerIndex;
+
     // States.
-    private          GamePadState _previousState;
-    private          GamePadState _currentState;
+    private GamePadState _previousState;
+    private GamePadState _currentState;
 
     public bool IsConnected => GamePad.GetState(_playerIndex).IsConnected;
 
@@ -22,7 +22,7 @@ public class PyGamePad
     {
         _playerIndex = playerIndex;
     }
-    
+
     public InputStates GetButton(GamePadButtons button)
     {
         InputStates inputState = InputStates.None;
@@ -65,7 +65,7 @@ public class PyGamePad
     {
         return trigger switch
                {
-                   GamePadTriggers.None => 0f,
+                   GamePadTriggers.None  => 0f,
                    GamePadTriggers.Left  => _currentState.Triggers.Left,
                    GamePadTriggers.Right => _currentState.Triggers.Right,
                    _                     => throw new InvalidOperationException($"Trigger '{trigger}' not supported."),
@@ -90,7 +90,7 @@ public class PyGamePad
                    GamePadThumbsticks.None => InputStates.Up,
                    GamePadThumbsticks.Left => GetButton(GamePadButtons.LeftThumb),
                    GamePadThumbsticks.Right => GetButton(GamePadButtons.RightThumb),
-                   _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported.")
+                   _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
                };
     }
 

@@ -15,21 +15,21 @@ public static class PyGamePads
 
     // GamePad states.
     private static readonly IDictionary<PlayerIndex, PyGamePad> GamePads;
-    
+
     // Config.
     internal static FocusLostInputBehaviour FocusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
 
     // GamePad states.
-    public static bool        IsAnyConnected       { get; private set; }
-    
+    public static bool IsAnyConnected { get; private set; }
+
     // Time stamps. 
     public static TimeSpan    LastInputTime        { get; private set; }
     public static PlayerIndex LastInputPlayerIndex { get; private set; }
 
     static PyGamePads()
     {
-        PlayersEnum            = Enum.GetValues<PlayerIndex>();
-        ButtonsEnum            = Enum.GetValues<GamePadButtons>();
+        PlayersEnum           = Enum.GetValues<PlayerIndex>();
+        ButtonsEnum           = Enum.GetValues<GamePadButtons>();
         SupportedPlayersCount = PlayersEnum.Length;
         GamePads              = new Dictionary<PlayerIndex, PyGamePad>(SupportedPlayersCount);
 
@@ -46,10 +46,11 @@ public static class PyGamePads
     }
 
     #region ImGui
-    private static readonly string[]         PlayerNames    = Enum.GetNames<PlayerIndex>();
-    private static readonly string[]         FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
 
-    private static int _playerIndex;
+    private static readonly string[] PlayerNames    = Enum.GetNames<PlayerIndex>();
+    private static readonly string[] FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
+
+    private static int  _playerIndex;
     private static bool _activeButtonsOnly = true;
 
     private static void ImGuiLayout(object? sender, EventArgs eventArgs)
@@ -87,7 +88,7 @@ public static class PyGamePads
         if (ImGui.CollapsingHeader("Buttons"))
         {
             ImGui.Checkbox("Only active keys", ref _activeButtonsOnly);
-            
+
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
 
             if (ImGui.BeginTable("Buttons", 4, flags))
@@ -100,8 +101,8 @@ public static class PyGamePads
 
                 foreach (GamePadButtons button in ButtonsEnum)
                 {
-                    if (_activeButtonsOnly && player.GetButton((button)) == InputStates.Up) continue;
-                    
+                    if (_activeButtonsOnly && player.GetButton(button) == InputStates.Up) continue;
+
                     bool pressed  = player.WasButtonPressed(button);
                     bool released = player.WasButtonReleased(button);
 
