@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Hexa.NET.ImGui;
 using Hexa.NET.ImPlot;
-using PsychoEngine.Core;
 using PsychoEngine.Input;
 
 namespace PsychoEngine;
