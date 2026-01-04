@@ -155,39 +155,42 @@ public static class PyKeyboard
                 ImGui.Checkbox("Only active keys", ref _activeKeysOnly);
 
                 const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
-                ImGui.BeginTable("Keys", 4, flags);
-                ImGui.TableSetupColumn("Key");
-                ImGui.TableSetupColumn("State");
-                ImGui.TableSetupColumn("Pressed");
-                ImGui.TableSetupColumn("Released");
-                ImGui.TableHeadersRow();
 
-                foreach (Keys key in AllKeys)
+                if (ImGui.BeginTable("Keys", 4, flags))
                 {
-                    InputStates state    = GetKey(key);
-                    bool        pressed  = WasKeyPressed(key);
-                    bool        released = WasKeyReleased(key);
+                    ImGui.TableSetupColumn("Key");
+                    ImGui.TableSetupColumn("State");
+                    ImGui.TableSetupColumn("Pressed");
+                    ImGui.TableSetupColumn("Released");
+                    ImGui.TableHeadersRow();
 
-                    if (_activeKeysOnly && state == InputStates.Up && !released) continue;
+                    foreach (Keys key in AllKeys)
+                    {
+                        InputStates state    = GetKey(key);
+                        bool        pressed  = WasKeyPressed(key);
+                        bool        released = WasKeyReleased(key);
 
-                    ImGui.TableNextRow();
-                    ImGui.TableNextColumn();
+                        if (_activeKeysOnly && state == InputStates.Up) continue;
 
-                    if (!IsKeyDown(key)) ImGui.BeginDisabled();
+                        ImGui.TableNextRow();
+                        ImGui.TableNextColumn();
 
-                    ImGui.Text(key.ToString());
-                    ImGui.TableNextColumn();
-                    ImGui.Text($"{(IsKeyDown(key) ? "Down" : "Up")}");
+                        if (!IsKeyDown(key)) ImGui.BeginDisabled();
 
-                    if (!IsKeyDown(key)) ImGui.EndDisabled();
+                        ImGui.Text(key.ToString());
+                        ImGui.TableNextColumn();
+                        ImGui.Text($"{(IsKeyDown(key) ? "Down" : "Up")}");
 
-                    ImGui.TableNextColumn();
-                    ImGui.Checkbox($"##{key}pressed", ref pressed);
-                    ImGui.TableNextColumn();
-                    ImGui.Checkbox($"##{key}released", ref released);
+                        if (!IsKeyDown(key)) ImGui.EndDisabled();
+
+                        ImGui.TableNextColumn();
+                        ImGui.Checkbox($"##{key}pressed", ref pressed);
+                        ImGui.TableNextColumn();
+                        ImGui.Checkbox($"##{key}released", ref released);
+                    }
+
+                    ImGui.EndTable();
                 }
-
-                ImGui.EndTable();
             }
 
             ImGui.TreePop();
@@ -206,16 +209,17 @@ public static class PyKeyboard
 
             const ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar;
 
-            ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags);
-
-            foreach (string message in EventLog)
+            if (ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags))
             {
-                ImGui.Text(message);
+                foreach (string message in EventLog)
+                {
+                    ImGui.Text(message);
+                }
+
+                ImGui.SetScrollHereY();
+
+                ImGui.EndChild();
             }
-
-            ImGui.SetScrollHereY();
-
-            ImGui.EndChild();
         }
 
         ImGui.End();
@@ -297,7 +301,7 @@ public static class PyKeyboard
         {
             // Update input state normally.
             _previousState = _currentState;
-            _currentState  = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+            _currentState  = Keyboard.GetState();
 
             return;
         }
@@ -318,7 +322,7 @@ public static class PyKeyboard
             case FocusLostInputBehaviour.KeepUpdating:
                 // Update input state normally.
                 _previousState = _currentState;
-                _currentState  = Microsoft.Xna.Framework.Input.Keyboard.GetState();
+                _currentState  = Keyboard.GetState();
                 break;
 
             default:

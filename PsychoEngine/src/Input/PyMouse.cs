@@ -7,6 +7,7 @@ namespace PsychoEngine.Input;
 public static class PyMouse
 {
     // TODO: Implement FNA Click ext.
+    // TODO: Mouse set position.
 
     // Constants.
     private const float WheelDeltaUnit = 120f;
@@ -231,110 +232,119 @@ public static class PyMouse
         if (ImGui.CollapsingHeader("Buttons"))
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
-            ImGui.BeginTable("Buttons", 4, flags);
-            ImGui.TableSetupColumn("Button");
-            ImGui.TableSetupColumn("State");
-            ImGui.TableSetupColumn("Pressed");
-            ImGui.TableSetupColumn("Released");
-            ImGui.TableHeadersRow();
 
-            foreach (MouseButtons button in AllButtons)
+            if (ImGui.BeginTable("Buttons", 4, flags))
             {
-                bool pressed  = WasButtonPressed(button);
-                bool released = WasButtonReleased(button);
+                ImGui.TableSetupColumn("Button");
+                ImGui.TableSetupColumn("State");
+                ImGui.TableSetupColumn("Pressed");
+                ImGui.TableSetupColumn("Released");
+                ImGui.TableHeadersRow();
 
-                if (!IsButtonDown(button)) ImGui.BeginDisabled();
+                foreach (MouseButtons button in AllButtons)
+                {
+                    bool pressed  = WasButtonPressed(button);
+                    bool released = WasButtonReleased(button);
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text(button.ToString());
-                ImGui.TableNextColumn();
-                ImGui.Text($"{(IsButtonDown(button) ? "Down" : "Up")}");
+                    if (!IsButtonDown(button)) ImGui.BeginDisabled();
 
-                if (!IsButtonDown(button)) ImGui.EndDisabled();
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text(button.ToString());
+                    ImGui.TableNextColumn();
+                    ImGui.Text($"{(IsButtonDown(button) ? "Down" : "Up")}");
 
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}pressed", ref pressed);
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}released", ref released);
+                    if (!IsButtonDown(button)) ImGui.EndDisabled();
+
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{button}pressed", ref pressed);
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{button}released", ref released);
+                }
+
+                ImGui.EndTable();
             }
-
-            ImGui.EndTable();
         }
 
         if (ImGui.CollapsingHeader("Dragging"))
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
-            ImGui.BeginTable("Dragging", 5, flags);
-            ImGui.TableSetupColumn("Button");
-            ImGui.TableSetupColumn("Start Pos");
-            ImGui.TableSetupColumn("Dragging");
-            ImGui.TableSetupColumn("Started");
-            ImGui.TableSetupColumn("Released");
-            ImGui.TableHeadersRow();
 
-            foreach (MouseButtons button in AllButtons)
+            if (ImGui.BeginTable("Dragging", 5, flags))
             {
-                Point startPos    = GetDragStartPosition(button);
-                bool  dragging    = IsDragging(button);
-                bool  startedDrag = WasDragStarted(button);
-                bool  stoppedDrag = WasDragReleased(button);
+                ImGui.TableSetupColumn("Button");
+                ImGui.TableSetupColumn("Start Pos");
+                ImGui.TableSetupColumn("Dragging");
+                ImGui.TableSetupColumn("Started");
+                ImGui.TableSetupColumn("Released");
+                ImGui.TableHeadersRow();
 
-                if (!dragging) ImGui.BeginDisabled();
+                foreach (MouseButtons button in AllButtons)
+                {
+                    Point startPos    = GetDragStartPosition(button);
+                    bool  dragging    = IsDragging(button);
+                    bool  startedDrag = WasDragStarted(button);
+                    bool  stoppedDrag = WasDragReleased(button);
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text(button.ToString());
-                ImGui.TableNextColumn();
-                ImGui.Text(startPos.ToString());
+                    if (!dragging) ImGui.BeginDisabled();
 
-                if (!dragging) ImGui.EndDisabled();
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text(button.ToString());
+                    ImGui.TableNextColumn();
+                    ImGui.Text(startPos.ToString());
 
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}dragging", ref dragging);
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}starteddrag", ref startedDrag);
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}releaseddrag", ref stoppedDrag);
+                    if (!dragging) ImGui.EndDisabled();
+
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{button}dragging", ref dragging);
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{button}starteddrag", ref startedDrag);
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{button}releaseddrag", ref stoppedDrag);
+                }
+
+                ImGui.EndTable();
             }
-
-            ImGui.EndTable();
         }
 
         if (ImGui.CollapsingHeader("Multi clicking"))
         {
             const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
-            ImGui.BeginTable("Multi clicking", 4, flags);
-            ImGui.TableSetupColumn("Button");
-            ImGui.TableSetupColumn("Last Press");
-            ImGui.TableSetupColumn("Clicks");
-            ImGui.TableSetupColumn("Multi clicked");
-            ImGui.TableHeadersRow();
 
-            foreach (MouseButtons button in AllButtons)
+            if (ImGui.BeginTable("Multi clicking", 4, flags))
             {
-                MouseButtonState state           = GetButtonState(button);
-                int              clicks          = GetConsecutiveClicks(button);
-                TimeSpan         lastReleaseTime = state.LastPressTime;
-                bool             multiClicked    = WasButtonMultiClicked(button);
+                ImGui.TableSetupColumn("Button");
+                ImGui.TableSetupColumn("Last Press");
+                ImGui.TableSetupColumn("Clicks");
+                ImGui.TableSetupColumn("Multi clicked");
+                ImGui.TableHeadersRow();
 
-                if (!multiClicked) ImGui.BeginDisabled();
+                foreach (MouseButtons button in AllButtons)
+                {
+                    MouseButtonState state           = GetButtonState(button);
+                    int              clicks          = GetConsecutiveClicks(button);
+                    TimeSpan         lastReleaseTime = state.LastPressTime;
+                    bool             multiClicked    = WasButtonMultiClicked(button);
 
-                ImGui.TableNextRow();
-                ImGui.TableNextColumn();
-                ImGui.Text(button.ToString());
-                ImGui.TableNextColumn();
-                ImGui.Text(lastReleaseTime.ToString());
-                ImGui.TableNextColumn();
-                ImGui.Text(clicks.ToString());
+                    if (!multiClicked) ImGui.BeginDisabled();
 
-                if (!multiClicked) ImGui.EndDisabled();
+                    ImGui.TableNextRow();
+                    ImGui.TableNextColumn();
+                    ImGui.Text(button.ToString());
+                    ImGui.TableNextColumn();
+                    ImGui.Text(lastReleaseTime.ToString());
+                    ImGui.TableNextColumn();
+                    ImGui.Text(clicks.ToString());
 
-                ImGui.TableNextColumn();
-                ImGui.Checkbox($"##{button}multi click", ref multiClicked);
+                    if (!multiClicked) ImGui.EndDisabled();
+
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##{button}multi click", ref multiClicked);
+                }
+
+                ImGui.EndTable();
             }
-
-            ImGui.EndTable();
         }
 
         _logHeader = ImGui.CollapsingHeader("Events log");
@@ -356,16 +366,17 @@ public static class PyMouse
 
             const ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar;
 
-            ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags);
-
-            foreach (string message in EventLog)
+            if (ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags))
             {
-                ImGui.Text(message);
+                foreach (string message in EventLog)
+                {
+                    ImGui.Text(message);
+                }
+
+                ImGui.SetScrollHereY();
+
+                ImGui.EndChild();
             }
-
-            ImGui.SetScrollHereY();
-
-            ImGui.EndChild();
         }
 
         ImGui.End();
@@ -508,7 +519,7 @@ public static class PyMouse
         {
             // Update input state normally.
             _previousState = _currentState;
-            _currentState  = Microsoft.Xna.Framework.Input.Mouse.GetState();
+            _currentState  = Mouse.GetState();
 
             return;
         }
@@ -539,7 +550,7 @@ public static class PyMouse
             case FocusLostInputBehaviour.KeepUpdating:
                 // Update input state normally.
                 _previousState = _currentState;
-                _currentState  = Microsoft.Xna.Framework.Input.Mouse.GetState();
+                _currentState  = Mouse.GetState();
                 break;
 
             default:
