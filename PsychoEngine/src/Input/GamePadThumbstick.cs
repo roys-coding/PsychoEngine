@@ -1,6 +1,6 @@
 ﻿namespace PsychoEngine.Input;
 
-public enum GamePadTriggers
+public enum GamePadThumbstick
 {
     None  = 0,
     Left  = 1,

@@ -5,9 +5,9 @@ namespace PsychoEngine.Input;
 public class KeyboardEventArgs : EventArgs
 {
     public Keys    Key          { get; }
-    public ModKeys ModifierKeys { get; }
+    public ModifierKeys ModifierKeys { get; }
 
-    public KeyboardEventArgs(Keys key, ModKeys modifierKeys)
+    public KeyboardEventArgs(Keys key, ModifierKeys modifierKeys)
     {
         Key          = key;
         ModifierKeys = modifierKeys;

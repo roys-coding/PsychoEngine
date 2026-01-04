@@ -3,9 +3,9 @@
 public abstract class MouseEventArgs : EventArgs
 {
     public Point   Position     { get; }
-    public ModKeys ModifierKeys { get; }
+    public ModifierKeys ModifierKeys { get; }
 
-    public MouseEventArgs(Point position, ModKeys modifierKeys)
+    public MouseEventArgs(Point position, ModifierKeys modifierKeys)
     {
         Position     = position;
         ModifierKeys = modifierKeys;
@@ -14,9 +14,9 @@ public abstract class MouseEventArgs : EventArgs
 
 public class MouseButtonEventArgs : MouseEventArgs
 {
-    public MouseButtons Button { get; }
+    public MouseButton Button { get; }
 
-    public MouseButtonEventArgs(MouseButtons button, Point position, ModKeys modifierKeys)
+    public MouseButtonEventArgs(MouseButton button, Point position, ModifierKeys modifierKeys)
         : base(position, modifierKeys)
     {
         Button = button;
@@ -28,7 +28,7 @@ public class MouseMovedEventArgs : MouseEventArgs
     public Point PreviousPosition { get; }
     public Point PositionDelta    { get; }
 
-    public MouseMovedEventArgs(Point previousPosition, Point position, Point positionDelta, ModKeys modifierKeys)
+    public MouseMovedEventArgs(Point previousPosition, Point position, Point positionDelta, ModifierKeys modifierKeys)
         : base(position, modifierKeys)
     {
         PreviousPosition = previousPosition;
@@ -41,7 +41,7 @@ public class MouseScrolledEventArgs : MouseEventArgs
     public float ScrollValue { get; }
     public float ScrollDelta { get; }
 
-    public MouseScrolledEventArgs(float scrollValue, float scrollDelta, Point position, ModKeys modifierKeys)
+    public MouseScrolledEventArgs(float scrollValue, float scrollDelta, Point position, ModifierKeys modifierKeys)
         : base(position, modifierKeys)
     {
         ScrollValue = scrollValue;
@@ -51,10 +51,10 @@ public class MouseScrolledEventArgs : MouseEventArgs
 
 public class MouseDraggedEventArgs : MouseEventArgs
 {
-    public MouseButtons Button            { get; }
+    public MouseButton Button            { get; }
     public Point        DragStartPosition { get; }
 
-    public MouseDraggedEventArgs(MouseButtons button, Point dragStartPosition, Point position, ModKeys modifierKeys)
+    public MouseDraggedEventArgs(MouseButton button, Point dragStartPosition, Point position, ModifierKeys modifierKeys)
         : base(position, modifierKeys)
     {
         Button            = button;
@@ -64,10 +64,10 @@ public class MouseDraggedEventArgs : MouseEventArgs
 
 public class MouseMultiClickEventArgs : MouseEventArgs
 {
-    public MouseButtons Button     { get; }
+    public MouseButton Button     { get; }
     public int          ClickCount { get; }
 
-    public MouseMultiClickEventArgs(MouseButtons button, int clickCount, Point position, ModKeys modifierKeys)
+    public MouseMultiClickEventArgs(MouseButton button, int clickCount, Point position, ModifierKeys modifierKeys)
         : base(position, modifierKeys)
     {
         Button     = button;

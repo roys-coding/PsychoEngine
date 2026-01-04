@@ -41,18 +41,18 @@ public static class PyKeyboard
     public static bool ModAlt     => IsKeyDown(Keys.LeftAlt)     || IsKeyDown(Keys.RightAlt);
     public static bool ModSuper   => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
 
-    public static ModKeys ModifierKeys
+    public static ModifierKeys ModifierKeys
     {
         get
         {
-            ModKeys modKeys = ModKeys.None;
+            ModifierKeys modifierKeys = ModifierKeys.None;
 
-            if (ModShift) modKeys   |= ModKeys.Shift;
-            if (ModControl) modKeys |= ModKeys.Control;
-            if (ModAlt) modKeys     |= ModKeys.Alt;
-            if (ModSuper) modKeys   |= ModKeys.Super;
+            if (ModShift) modifierKeys   |= ModifierKeys.Shift;
+            if (ModControl) modifierKeys |= ModifierKeys.Control;
+            if (ModAlt) modifierKeys     |= ModifierKeys.Alt;
+            if (ModSuper) modifierKeys   |= ModifierKeys.Super;
 
-            return modKeys;
+            return modifierKeys;
         }
     }
 
@@ -308,13 +308,13 @@ public static class PyKeyboard
 
         switch (_focusLostInputBehaviour)
         {
-            case FocusLostInputBehaviour.ClearState:
+            case FocusLostInputBehaviour.ClearStates:
                 // Pass an empty state, releasing all keys.
                 _previousState = _currentState;
                 _currentState  = default(KeyboardState);
                 break;
 
-            case FocusLostInputBehaviour.MaintainState:
+            case FocusLostInputBehaviour.FreezeStates:
                 // Maintain previous state, not releasing nor pressing any more keys.
                 _previousState = _currentState;
                 break;

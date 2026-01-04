@@ -30,14 +30,14 @@ public static class PyMouse
     public static event EventHandler<MouseMultiClickEventArgs>? OnMultiClick;
 
     // Constants.
-    private static readonly MouseButtons[] AllButtons;
+    private static readonly MouseButton[] AllButtons;
 
     // TODO: Make input configurable.
 
     // Config.
     private const  int                     DragThreshold                    = 5;
     private const  double                  ConsecutiveClickThresholdSeconds = 0.5;
-    private static FocusLostInputBehaviour _focusLostInputBehaviour         = FocusLostInputBehaviour.ClearState;
+    private static FocusLostInputBehaviour _focusLostInputBehaviour         = FocusLostInputBehaviour.ClearStates;
 
     // States.
     private static MouseState _previousState;
@@ -68,7 +68,7 @@ public static class PyMouse
 
     static PyMouse()
     {
-        AllButtons = Enum.GetValues<MouseButtons>();
+        AllButtons = Enum.GetValues<MouseButton>();
 
         #region ImGui
 
@@ -292,7 +292,7 @@ public static class PyMouse
                 ImGui.TableSetupColumn("Released");
                 ImGui.TableHeadersRow();
 
-                foreach (MouseButtons button in AllButtons)
+                foreach (MouseButton button in AllButtons)
                 {
                     bool pressed  = WasButtonPressed(button);
                     bool released = WasButtonReleased(button);
@@ -330,7 +330,7 @@ public static class PyMouse
                 ImGui.TableSetupColumn("Released");
                 ImGui.TableHeadersRow();
 
-                foreach (MouseButtons button in AllButtons)
+                foreach (MouseButton button in AllButtons)
                 {
                     Point startPos    = GetDragStartPosition(button);
                     bool  dragging    = IsDragging(button);
@@ -371,7 +371,7 @@ public static class PyMouse
                 ImGui.TableSetupColumn("Multi clicked");
                 ImGui.TableHeadersRow();
 
-                foreach (MouseButtons button in AllButtons)
+                foreach (MouseButton button in AllButtons)
                 {
                     MouseButtonState state           = GetButtonState(button);
                     int              clicks          = GetConsecutiveClicks(button);
@@ -435,32 +435,32 @@ public static class PyMouse
 
     #endregion
 
-    public static InputStates GetButton(MouseButtons button)
+    public static InputStates GetButton(MouseButton button)
     {
         return GetButtonState(button).InputState;
     }
 
-    public static bool IsButtonUp(MouseButtons button)
+    public static bool IsButtonUp(MouseButton button)
     {
         return GetButton(button).HasFlag(InputStates.Up);
     }
 
-    public static bool IsButtonDown(MouseButtons button)
+    public static bool IsButtonDown(MouseButton button)
     {
         return GetButton(button).HasFlag(InputStates.Down);
     }
 
-    public static bool WasButtonPressed(MouseButtons button)
+    public static bool WasButtonPressed(MouseButton button)
     {
         return GetButton(button).HasFlag(InputStates.Pressed);
     }
 
-    public static bool WasButtonReleased(MouseButtons button)
+    public static bool WasButtonReleased(MouseButton button)
     {
         return GetButton(button).HasFlag(InputStates.Released);
     }
 
-    public static bool WasDragStarted(MouseButtons button)
+    public static bool WasDragStarted(MouseButton button)
     {
         MouseButtonState state = GetButtonState(button);
 
@@ -471,12 +471,12 @@ public static class PyMouse
                };
     }
 
-    public static bool IsDragging(MouseButtons button)
+    public static bool IsDragging(MouseButton button)
     {
         return GetButtonState(button).IsDragging;
     }
 
-    public static bool WasDragReleased(MouseButtons button)
+    public static bool WasDragReleased(MouseButton button)
     {
         MouseButtonState state = GetButtonState(button);
 
@@ -487,17 +487,17 @@ public static class PyMouse
                };
     }
 
-    public static Point GetDragStartPosition(MouseButtons button)
+    public static Point GetDragStartPosition(MouseButton button)
     {
         return GetButtonState(button).DragStartPosition;
     }
 
-    public static bool WasButtonMultiClicked(MouseButtons button)
+    public static bool WasButtonMultiClicked(MouseButton button)
     {
         return WasButtonPressed(button) && GetButtonState(button).ConsecutiveClicks > 0;
     }
 
-    public static bool WasButtonMultiClicked(MouseButtons button, int multiClicks)
+    public static bool WasButtonMultiClicked(MouseButton button, int multiClicks)
     {
         MouseButtonState buttonState = GetButtonState(button);
 
@@ -506,7 +506,7 @@ public static class PyMouse
                buttonState.ConsecutiveClicks % multiClicks == 0;
     }
 
-    public static int GetConsecutiveClicks(MouseButtons button)
+    public static int GetConsecutiveClicks(MouseButton button)
     {
         return GetButtonState(button).ConsecutiveClicks;
     }
@@ -552,7 +552,7 @@ public static class PyMouse
         }
 
         // Input state and dragging.
-        foreach (MouseButtons button in AllButtons)
+        foreach (MouseButton button in AllButtons)
         {
             MouseButtonState state = GetButtonState(button);
 
@@ -577,7 +577,7 @@ public static class PyMouse
 
         switch (_focusLostInputBehaviour)
         {
-            case FocusLostInputBehaviour.ClearState:
+            case FocusLostInputBehaviour.ClearStates:
                 // Pass an empty state, releasing all buttons.
                 // We only retain the last position and scroll value.
                 _previousState = _currentState;
@@ -593,7 +593,7 @@ public static class PyMouse
 
                 break;
 
-            case FocusLostInputBehaviour.MaintainState:
+            case FocusLostInputBehaviour.FreezeStates:
                 // Maintain previous state, not releasing nor pressing any more buttons.
                 _previousState = _currentState;
                 break;
@@ -610,7 +610,7 @@ public static class PyMouse
         }
     }
 
-    private static void UpdateButtonInputState(MouseButtons button, ref MouseButtonState state)
+    private static void UpdateButtonInputState(MouseButton button, ref MouseButtonState state)
     {
         ButtonState previousState = _previousState.GetButton(button);
         ButtonState currentState  = _currentState.GetButton(button);
@@ -662,7 +662,7 @@ public static class PyMouse
         if (receivedAnyInput) LastInputTime = PyGameTimes.Update.TotalGameTime;
     }
 
-    private static void UpdateButtonDragging(MouseButtons button, ref MouseButtonState state)
+    private static void UpdateButtonDragging(MouseButton button, ref MouseButtonState state)
     {
         state.PreviousIsDragging = state.IsDragging;
 
@@ -715,7 +715,7 @@ public static class PyMouse
         }
     }
 
-    private static void UpdateButtonConsecutiveClicking(MouseButtons button, ref MouseButtonState state)
+    private static void UpdateButtonConsecutiveClicking(MouseButton button, ref MouseButtonState state)
     {
         if (WasButtonPressed(button))
         {
@@ -740,43 +740,43 @@ public static class PyMouse
         }
     }
 
-    private static MouseButtonState GetButtonState(MouseButtons button)
+    private static MouseButtonState GetButtonState(MouseButton button)
     {
         return button switch
                {
-                   MouseButtons.None   => default(MouseButtonState),
-                   MouseButtons.Left   => _leftButton,
-                   MouseButtons.Middle => _middleButton,
-                   MouseButtons.Right  => _rightButton,
-                   MouseButtons.X1     => _x1Button,
-                   MouseButtons.X2     => _x2Button,
+                   MouseButton.None   => default(MouseButtonState),
+                   MouseButton.Left   => _leftButton,
+                   MouseButton.Middle => _middleButton,
+                   MouseButton.Right  => _rightButton,
+                   MouseButton.X1     => _x1Button,
+                   MouseButton.X2     => _x2Button,
                    _                   => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
                };
     }
 
-    private static void SetButtonState(MouseButtons button, MouseButtonState state)
+    private static void SetButtonState(MouseButton button, MouseButtonState state)
     {
         switch (button)
         {
-            case MouseButtons.None: break;
+            case MouseButton.None: break;
 
-            case MouseButtons.Left:
+            case MouseButton.Left:
                 _leftButton = state;
                 break;
 
-            case MouseButtons.Middle:
+            case MouseButton.Middle:
                 _middleButton = state;
                 break;
 
-            case MouseButtons.Right:
+            case MouseButton.Right:
                 _rightButton = state;
                 break;
 
-            case MouseButtons.X1:
+            case MouseButton.X1:
                 _x1Button = state;
                 break;
 
-            case MouseButtons.X2:
+            case MouseButton.X2:
                 _x2Button = state;
                 break;
 

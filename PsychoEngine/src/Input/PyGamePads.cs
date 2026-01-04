@@ -11,13 +11,13 @@ public static class PyGamePads
     public static readonly int SupportedPlayersCount;
 
     private static readonly PlayerIndex[]    PlayersEnum;
-    private static readonly GamePadButtons[] ButtonsEnum;
+    private static readonly GamePadButton[] ButtonsEnum;
 
     // GamePad states.
     private static readonly IDictionary<PlayerIndex, PyGamePad> GamePads;
 
     // Config.
-    internal static FocusLostInputBehaviour FocusLostInputBehaviour = FocusLostInputBehaviour.ClearState;
+    internal static FocusLostInputBehaviour FocusLostInputBehaviour = FocusLostInputBehaviour.ClearStates;
 
     // GamePad states.
     public static bool IsAnyConnected { get; private set; }
@@ -29,7 +29,7 @@ public static class PyGamePads
     static PyGamePads()
     {
         PlayersEnum           = Enum.GetValues<PlayerIndex>();
-        ButtonsEnum           = Enum.GetValues<GamePadButtons>();
+        ButtonsEnum           = Enum.GetValues<GamePadButton>();
         SupportedPlayersCount = PlayersEnum.Length;
         GamePads              = new Dictionary<PlayerIndex, PyGamePad>(SupportedPlayersCount);
 
@@ -99,7 +99,7 @@ public static class PyGamePads
                 ImGui.TableSetupColumn("Released");
                 ImGui.TableHeadersRow();
 
-                foreach (GamePadButtons button in ButtonsEnum)
+                foreach (GamePadButton button in ButtonsEnum)
                 {
                     if (_activeButtonsOnly && player.GetButton(button) == InputStates.Up) continue;
 
@@ -142,8 +142,8 @@ public static class PyGamePads
 
             if (ImPlot.BeginSubplots("Thumbsticks", 1, 2, plotSize, subplotFlags))
             {
-                DrawThumbPlot("Left",  GamePadThumbsticks.Left,  0);
-                DrawThumbPlot("Right", GamePadThumbsticks.Right, 1);
+                DrawThumbPlot("Left",  GamePadThumbstick.Left,  0);
+                DrawThumbPlot("Right", GamePadThumbstick.Right, 1);
 
                 ImPlot.EndSubplots();
             }
@@ -176,7 +176,7 @@ public static class PyGamePads
 
                     float[] leftTrigger =
                     [
-                        player.GetTrigger(GamePadTriggers.Left),
+                        player.GetTrigger(GamePadTrigger.Left),
                     ];
 
                     fixed (float* leftTriggerPtr = leftTrigger)
@@ -186,7 +186,7 @@ public static class PyGamePads
 
                     float[] rightTrigger =
                     [
-                        0f, player.GetTrigger(GamePadTriggers.Right),
+                        0f, player.GetTrigger(GamePadTrigger.Right),
                     ];
 
                     fixed (float* rightTriggerPtr = rightTrigger)
@@ -213,7 +213,7 @@ public static class PyGamePads
 
         return;
 
-        unsafe void DrawThumbPlot(string name, GamePadThumbsticks thumbstick, int index)
+        unsafe void DrawThumbPlot(string name, GamePadThumbstick thumbstick, int index)
         {
             const ImPlotFlags plotFlags = ImPlotFlags.NoTitle | ImPlotFlags.NoInputs;
 

@@ -1,7 +1,7 @@
 ﻿namespace PsychoEngine.Input;
 
 [Flags]
-public enum ModKeys
+public enum ModifierKeys
 {
     None    = 0,
     Control = 1 << 0,

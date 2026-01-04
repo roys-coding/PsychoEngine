@@ -1,6 +1,6 @@
 ﻿namespace PsychoEngine.Input;
 
-public enum MouseButtons
+public enum MouseButton
 {
     None   = 0,
     Left   = 1,

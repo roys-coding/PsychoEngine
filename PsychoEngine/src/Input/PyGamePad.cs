@@ -23,7 +23,7 @@ public class PyGamePad
         _playerIndex = playerIndex;
     }
 
-    public InputStates GetButton(GamePadButtons button)
+    public InputStates GetButton(GamePadButton button)
     {
         InputStates inputState = InputStates.None;
 
@@ -35,17 +35,17 @@ public class PyGamePad
         return inputState;
     }
 
-    public bool IsButtonUp(GamePadButtons button)
+    public bool IsButtonUp(GamePadButton button)
     {
         return GetButtonState(button, _currentState) != ButtonState.Pressed;
     }
 
-    public bool IsButtonDown(GamePadButtons button)
+    public bool IsButtonDown(GamePadButton button)
     {
         return GetButtonState(button, _currentState) == ButtonState.Pressed;
     }
 
-    public bool WasButtonPressed(GamePadButtons button)
+    public bool WasButtonPressed(GamePadButton button)
     {
         ButtonState previousState = GetButtonState(button, _previousState);
         ButtonState currentState  = GetButtonState(button, _currentState);
@@ -53,7 +53,7 @@ public class PyGamePad
         return previousState == ButtonState.Released && currentState == ButtonState.Pressed;
     }
 
-    public bool WasButtonReleased(GamePadButtons button)
+    public bool WasButtonReleased(GamePadButton button)
     {
         ButtonState previousState = GetButtonState(button, _previousState);
         ButtonState currentState  = GetButtonState(button, _currentState);
@@ -61,79 +61,79 @@ public class PyGamePad
         return previousState == ButtonState.Pressed && currentState == ButtonState.Released;
     }
 
-    public float GetTrigger(GamePadTriggers trigger)
+    public float GetTrigger(GamePadTrigger trigger)
     {
         return trigger switch
                {
-                   GamePadTriggers.None  => 0f,
-                   GamePadTriggers.Left  => _currentState.Triggers.Left,
-                   GamePadTriggers.Right => _currentState.Triggers.Right,
+                   GamePadTrigger.None  => 0f,
+                   GamePadTrigger.Left  => _currentState.Triggers.Left,
+                   GamePadTrigger.Right => _currentState.Triggers.Right,
                    _                     => throw new InvalidOperationException($"Trigger '{trigger}' not supported."),
                };
     }
 
-    public Vector2 GetThumbstick(GamePadThumbsticks thumbstick)
+    public Vector2 GetThumbstick(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
-                   GamePadThumbsticks.None => Vector2.Zero,
-                   GamePadThumbsticks.Left => _currentState.ThumbSticks.Left,
-                   GamePadThumbsticks.Right => _currentState.ThumbSticks.Right,
+                   GamePadThumbstick.None => Vector2.Zero,
+                   GamePadThumbstick.Left => _currentState.ThumbSticks.Left,
+                   GamePadThumbstick.Right => _currentState.ThumbSticks.Right,
                    _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
                };
     }
 
-    public InputStates GetButtonThumbstick(GamePadThumbsticks thumbstick)
+    public InputStates GetThumbstickButton(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
-                   GamePadThumbsticks.None => InputStates.Up,
-                   GamePadThumbsticks.Left => GetButton(GamePadButtons.LeftThumb),
-                   GamePadThumbsticks.Right => GetButton(GamePadButtons.RightThumb),
+                   GamePadThumbstick.None => InputStates.Up,
+                   GamePadThumbstick.Left => GetButton(GamePadButton.LeftThumb),
+                   GamePadThumbstick.Right => GetButton(GamePadButton.RightThumb),
                    _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
                };
     }
 
-    public bool IsThumbstickUp(GamePadThumbsticks thumbstick)
+    public bool IsThumbstickUp(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
-                   GamePadThumbsticks.None => false,
-                   GamePadThumbsticks.Left => IsButtonUp(GamePadButtons.LeftThumb),
-                   GamePadThumbsticks.Right => IsButtonUp(GamePadButtons.RightThumb),
+                   GamePadThumbstick.None => false,
+                   GamePadThumbstick.Left => IsButtonUp(GamePadButton.LeftThumb),
+                   GamePadThumbstick.Right => IsButtonUp(GamePadButton.RightThumb),
                    _ => throw new InvalidOperationException($"Thumbsticks '{thumbstick}' not supported."),
                };
     }
 
-    public bool IsThumbstickDown(GamePadThumbsticks thumbstick)
+    public bool IsThumbstickDown(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
-                   GamePadThumbsticks.None => false,
-                   GamePadThumbsticks.Left => IsButtonDown(GamePadButtons.LeftThumb),
-                   GamePadThumbsticks.Right => IsButtonDown(GamePadButtons.RightThumb),
+                   GamePadThumbstick.None => false,
+                   GamePadThumbstick.Left => IsButtonDown(GamePadButton.LeftThumb),
+                   GamePadThumbstick.Right => IsButtonDown(GamePadButton.RightThumb),
                    _ => throw new InvalidOperationException($"Thumbsticks '{thumbstick}' not supported."),
                };
     }
 
-    public bool WasThumbstickPressed(GamePadThumbsticks thumbstick)
+    public bool WasThumbstickPressed(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
-                   GamePadThumbsticks.None => false,
-                   GamePadThumbsticks.Left => WasButtonPressed(GamePadButtons.LeftThumb),
-                   GamePadThumbsticks.Right => WasButtonPressed(GamePadButtons.RightThumb),
+                   GamePadThumbstick.None => false,
+                   GamePadThumbstick.Left => WasButtonPressed(GamePadButton.LeftThumb),
+                   GamePadThumbstick.Right => WasButtonPressed(GamePadButton.RightThumb),
                    _ => throw new InvalidOperationException($"Thumbsticks '{thumbstick}' not supported."),
                };
     }
 
-    public bool WasThumbstickReleased(GamePadThumbsticks thumbstick)
+    public bool WasThumbstickReleased(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
-                   GamePadThumbsticks.None => false,
-                   GamePadThumbsticks.Left => WasButtonReleased(GamePadButtons.LeftThumb),
-                   GamePadThumbsticks.Right => WasButtonReleased(GamePadButtons.RightThumb),
+                   GamePadThumbstick.None => false,
+                   GamePadThumbstick.Left => WasButtonReleased(GamePadButton.LeftThumb),
+                   GamePadThumbstick.Right => WasButtonReleased(GamePadButton.RightThumb),
                    _ => throw new InvalidOperationException($"Thumbsticks '{thumbstick}' not supported."),
                };
     }
@@ -158,13 +158,13 @@ public class PyGamePad
 
         switch (PyGamePads.FocusLostInputBehaviour)
         {
-            case FocusLostInputBehaviour.ClearState:
+            case FocusLostInputBehaviour.ClearStates:
                 // Pass an empty state, releasing all keys.
                 _previousState = _currentState;
                 _currentState  = default(GamePadState);
                 break;
 
-            case FocusLostInputBehaviour.MaintainState:
+            case FocusLostInputBehaviour.FreezeStates:
                 // Maintain previous state, not releasing nor pressing any more keys.
                 _previousState = _currentState;
                 break;
@@ -187,26 +187,26 @@ public class PyGamePad
         }
     }
 
-    private static ButtonState GetButtonState(GamePadButtons button, GamePadState state)
+    private static ButtonState GetButtonState(GamePadButton button, GamePadState state)
     {
         return button switch
                {
-                   GamePadButtons.None => ButtonState.Released,
-                   GamePadButtons.A => state.Buttons.A,
-                   GamePadButtons.B => state.Buttons.B,
-                   GamePadButtons.X => state.Buttons.X,
-                   GamePadButtons.Y => state.Buttons.Y,
-                   GamePadButtons.DPadUp => state.DPad.Up,
-                   GamePadButtons.DPadDown => state.DPad.Down,
-                   GamePadButtons.DPadLeft => state.DPad.Left,
-                   GamePadButtons.DPadRight => state.DPad.Right,
-                   GamePadButtons.LeftShoulder => state.Buttons.LeftShoulder,
-                   GamePadButtons.RightShoulder => state.Buttons.RightShoulder,
-                   GamePadButtons.LeftThumb => state.Buttons.LeftStick,
-                   GamePadButtons.RightThumb => state.Buttons.RightStick,
-                   GamePadButtons.Back => state.Buttons.Back,
-                   GamePadButtons.Start => state.Buttons.Start,
-                   GamePadButtons.Guide => state.Buttons.BigButton,
+                   GamePadButton.None => ButtonState.Released,
+                   GamePadButton.A => state.Buttons.A,
+                   GamePadButton.B => state.Buttons.B,
+                   GamePadButton.X => state.Buttons.X,
+                   GamePadButton.Y => state.Buttons.Y,
+                   GamePadButton.DPadUp => state.DPad.Up,
+                   GamePadButton.DPadDown => state.DPad.Down,
+                   GamePadButton.DPadLeft => state.DPad.Left,
+                   GamePadButton.DPadRight => state.DPad.Right,
+                   GamePadButton.LeftShoulder => state.Buttons.LeftShoulder,
+                   GamePadButton.RightShoulder => state.Buttons.RightShoulder,
+                   GamePadButton.LeftThumb => state.Buttons.LeftStick,
+                   GamePadButton.RightThumb => state.Buttons.RightStick,
+                   GamePadButton.Back => state.Buttons.Back,
+                   GamePadButton.Start => state.Buttons.Start,
+                   GamePadButton.Guide => state.Buttons.BigButton,
                    _ => throw new InvalidOperationException($"Button '{button}' not supported."),
                };
     }

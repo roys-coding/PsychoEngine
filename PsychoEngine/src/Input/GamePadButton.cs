@@ -1,6 +1,6 @@
 ﻿namespace PsychoEngine.Input;
 
-public enum GamePadButtons
+public enum GamePadButton
 {
     None          = 0,
     Back          = 1,
