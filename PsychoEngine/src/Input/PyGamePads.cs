@@ -274,11 +274,11 @@ public static class PyGamePads
 
                 ImPlot.PlotLine(name, xsPtr, ysPtr, xs.Length);
 
-                uint     borderColor = ImGui.GetColorU32(ImGuiCol.Separator);
+                uint     circleColor = ImGui.GetColorU32(ImGuiCol.Separator);
                 NVector2 center      = ImPlot.PlotToPixels(new ImPlotPoint(0f));
                 NVector2 right       = ImPlot.PlotToPixels(new ImPlotPoint(1f));
                 ImPlot.PushPlotClipRect();
-                ImPlot.GetPlotDrawList().AddCircle(center, right.X - center.X, borderColor, 60);
+                ImPlot.GetPlotDrawList().AddCircle(center, right.X - center.X, circleColor, 60);
                 ImPlot.PopPlotClipRect();
             }
 
