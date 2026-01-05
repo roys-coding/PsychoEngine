@@ -7,12 +7,31 @@ namespace PsychoEngine.Input;
 
 public static class PyGamePads
 {
+    #region Events
+
+    // Connection.
+    public static event EventHandler<GamePadEventArgs>? OnPlayerConnected;
+    public static event EventHandler<GamePadEventArgs>? OnPlayerDisconnected;
+
+    // Buttons.
+    public static event EventHandler<GamePadButtonEventArgs>? OnButtonDown;
+    public static event EventHandler<GamePadButtonEventArgs>? OnButtonPressed;
+    public static event EventHandler<GamePadButtonEventArgs>? OnButtonReleased;
+
+    // Analog input.
+    public static event EventHandler<GamePadTriggerEventArgs>?    OnTriggerMoved;
+    public static event EventHandler<GamePadThumbstickEventArgs>? OnThumbstickMoved;
+
+    #endregion
+
     #region Fields
 
     // Constants.
-    private static readonly int             SupportedPlayersCount;
-    private static readonly PlayerIndex[]   PlayersEnum;
-    private static readonly GamePadButton[] ButtonsEnum;
+    internal static readonly int                 SupportedPlayersCount;
+    internal static readonly PlayerIndex[]       PlayersEnum;
+    internal static readonly GamePadButton[]     ButtonsEnum;
+    internal static readonly GamePadTrigger[]    TriggersEnum;
+    internal static readonly GamePadThumbstick[] ThumbsticksEnum;
 
     // GamePad states.
     private static readonly IDictionary<PlayerIndex, PyGamePad> GamePads;
@@ -24,12 +43,12 @@ public static class PyGamePads
 
     #region Properties
 
-    // GamePad states.
+    // Device state.
     public static bool IsAnyConnected { get; private set; }
 
     // Time stamps. 
-    public static TimeSpan    LastInputTime        { get; private set; }
-    public static PlayerIndex LastInputPlayerIndex { get; private set; }
+    public static TimeSpan    LastInputTime              { get; private set; }
+    public static PlayerIndex LastInputResponsiblePlayer { get; private set; }
 
     #endregion
 
@@ -37,9 +56,12 @@ public static class PyGamePads
     {
         PlayersEnum           = Enum.GetValues<PlayerIndex>();
         ButtonsEnum           = Enum.GetValues<GamePadButton>();
+        TriggersEnum          = Enum.GetValues<GamePadTrigger>();
+        ThumbsticksEnum       = Enum.GetValues<GamePadThumbstick>();
         SupportedPlayersCount = PlayersEnum.Length;
         GamePads              = new Dictionary<PlayerIndex, PyGamePad>(SupportedPlayersCount);
 
+        // Populate states dictionary.
         foreach (PlayerIndex player in PlayersEnum)
         {
             GamePads.Add(player, new PyGamePad(player));
@@ -49,6 +71,78 @@ public static class PyGamePads
 
         PyGame.Instance.ImGuiManager.OnLayout += ImGuiLayout;
 
+        OnPlayerConnected += (_, args) =>
+                             {
+                                 if (!_logConnectionEvent) return;
+
+                                 ImGuiLog("OnPlayerConnected");
+                                 ImGuiLog($"     -Player: {args.PlayerIndex}");
+                                 ImGuiLog("separator");
+                             };
+
+        OnPlayerDisconnected += (_, args) =>
+                                {
+                                    if (!_logConnectionEvent) return;
+
+                                    ImGuiLog("OnPlayerDisconnected");
+                                    ImGuiLog($"     -Player: {args.PlayerIndex}");
+                                    ImGuiLog("separator");
+                                };
+
+        OnButtonDown += (_, args) =>
+                        {
+                            if (!_logDownEvent) return;
+
+                            ImGuiLog("OnButtonDown");
+                            ImGuiLog($"     -Player: {args.PlayerIndex}");
+                            ImGuiLog($"     -Button: {args.Button}");
+                            ImGuiLog("separator");
+                        };
+
+        OnButtonPressed += (_, args) =>
+                           {
+                               if (!_logPressEvent) return;
+
+                               ImGuiLog("OnButtonPressed");
+                               ImGuiLog($"     -Player: {args.PlayerIndex}");
+                               ImGuiLog($"     -Button: {args.Button}");
+                               ImGuiLog("separator");
+                           };
+
+        OnButtonReleased += (_, args) =>
+                            {
+                                if (!_logReleaseEvent) return;
+
+                                ImGuiLog("OnButtonReleased");
+                                ImGuiLog($"     -Player: {args.PlayerIndex}");
+                                ImGuiLog($"     -Button: {args.Button}");
+                                ImGuiLog("separator");
+                            };
+
+        OnTriggerMoved += (_, args) =>
+                          {
+                              if (!_logTriggerEvent) return;
+
+                              ImGuiLog("OnTriggerMoved");
+                              ImGuiLog($"     -Player: {args.PlayerIndex}");
+                              ImGuiLog($"     -Trigger: {args.Trigger}");
+                              ImGuiLog($"     -Value: {args.TriggerValue}");
+                              ImGuiLog($"     -Delta: {args.TriggerDelta}");
+                              ImGuiLog("separator");
+                          };
+
+        OnThumbstickMoved += (_, args) =>
+                             {
+                                 if (!_logThumbstickEvent) return;
+
+                                 ImGuiLog("OnThumbstickMoved");
+                                 ImGuiLog($"     -Player: {args.PlayerIndex}");
+                                 ImGuiLog($"     -Thumbstick: {args.Thumbstick}");
+                                 ImGuiLog($"     -Value: {args.ThumbstickValue}");
+                                 ImGuiLog($"     -Delta: {args.ThumbstickDelta}");
+                                 ImGuiLog("separator");
+                             };
+
         #endregion
     }
 
@@ -56,13 +150,36 @@ public static class PyGamePads
 
     #region ImGui fields
 
+    private const  int  LogCapacity         = 100;
+    private static bool _logConnectionEvent = true;
+    private static bool _logDownEvent;
+    private static bool _logPressEvent      = true;
+    private static bool _logReleaseEvent    = true;
+    private static bool _logTriggerEvent    = true;
+    private static bool _logThumbstickEvent = true;
+
     private static readonly string[] PlayerNames    = Enum.GetNames<PlayerIndex>();
     private static readonly string[] FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
+
+    private static readonly List<string> EventLog = new(LogCapacity);
+    private static          bool         _logHeader;
 
     private static int  _playerIndex;
     private static bool _activeButtonsOnly = true;
 
     #endregion
+
+    private static void ImGuiLog(string message)
+    {
+        if (!_logHeader) return;
+
+        EventLog.Add(message);
+
+        if (EventLog.Count >= LogCapacity)
+        {
+            EventLog.RemoveAt(0);
+        }
+    }
 
     private static void ImGuiLayout(object? sender, EventArgs eventArgs)
     {
@@ -74,10 +191,7 @@ public static class PyGamePads
             return;
         }
 
-        ImGui.Combo("Player", ref _playerIndex, PlayerNames, PlayerNames.Length);
-        PyGamePad player = GetPlayer((PlayerIndex)_playerIndex);
-
-        ImGui.Text($"Connected: {player.IsConnected}");
+        ImGui.SeparatorText("Global");
 
         if (ImGui.CollapsingHeader("Config"))
         {
@@ -89,11 +203,83 @@ public static class PyGamePads
             if (focusLostChanged) FocusLostInputBehaviour = (FocusLostInputBehaviour)focusLost;
         }
 
-        if (ImGui.CollapsingHeader("Time stamps"))
+        if (ImGui.CollapsingHeader("Time stamps##global"))
         {
-            ImGui.Text($"Last Input Any: {LastInputTime}");
-            ImGui.Text($"Last Input Player: {LastInputPlayerIndex}");
-            ImGui.Text($"Last Input Player {_playerIndex}: {player.LastInputTime}");
+            ImGui.Text($"Last Input: {LastInputTime}");
+            ImGui.Text($"Last Input Player: {LastInputResponsiblePlayer}");
+        }
+
+        if (ImGui.CollapsingHeader("Connection##global"))
+        {
+            const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
+
+            if (ImGui.BeginTable("Connection##table", 2, flags))
+            {
+                ImGui.TableSetupColumn("Player");
+                ImGui.TableSetupColumn("Connected");
+                ImGui.TableHeadersRow();
+
+                foreach (PlayerIndex playerI in PlayersEnum)
+                {
+                    PyGamePad playerN   = GetPlayer(playerI);
+                    bool      connected = playerN.IsConnected;
+
+                    ImGui.TableNextColumn();
+                    ImGui.Text(PlayerNames[(int)playerI]);
+                    ImGui.TableNextColumn();
+                    ImGui.Checkbox($"##conected{playerI}", ref connected);
+                    ImGui.TableNextRow();
+                }
+
+                ImGui.EndTable();
+            }
+        }
+
+        ImGui.Spacing();
+        ImGui.Separator();
+
+        ImGui.Combo("Player", ref _playerIndex, PlayerNames, PlayerNames.Length);
+        PyGamePad player = GetPlayer((PlayerIndex)_playerIndex);
+
+        ImGui.SeparatorText($"Player {PlayerNames[_playerIndex]}");
+
+        if (ImGui.CollapsingHeader("Connection##player"))
+        {
+            const ImGuiTableFlags flags = ImGuiTableFlags.BordersOuter | ImGuiTableFlags.BordersInnerV;
+
+            if (ImGui.BeginTable("Connection##table", 3, flags))
+            {
+                ImGui.TableSetupColumn("Status");
+                ImGui.TableSetupColumn("WasConnected");
+                ImGui.TableSetupColumn("WasDisconnected");
+                ImGui.TableHeadersRow();
+
+                bool connected    = player.WasConnected();
+                bool disconnected = player.WasDisconnected();
+
+                ImGui.TableNextColumn();
+
+                if (player.IsConnected)
+                {
+                    ImGui.Text("Connected");
+                }
+                else
+                {
+                    ImGui.TextDisabled("Disconnected");
+                }
+
+                ImGui.TableNextColumn();
+                ImGui.Checkbox($"##{player}connected", ref connected);
+                ImGui.TableNextColumn();
+                ImGui.Checkbox($"##{player}disconnected", ref disconnected);
+
+                ImGui.EndTable();
+            }
+        }
+
+        if (ImGui.CollapsingHeader("Time stamps##player"))
+        {
+            ImGui.Text($"Last Input: {player.LastInputTime}");
         }
 
         if (ImGui.CollapsingHeader("Buttons"))
@@ -112,7 +298,7 @@ public static class PyGamePads
 
                 foreach (GamePadButton button in ButtonsEnum)
                 {
-                    if (_activeButtonsOnly && player.GetButton(button) == InputStates.Up) continue;
+                    if (_activeButtonsOnly && player.GetButtonState(button) == InputStates.Up) continue;
 
                     bool pressed  = player.WasButtonPressed(button);
                     bool released = player.WasButtonReleased(button);
@@ -220,6 +406,53 @@ public static class PyGamePads
             }
         }
 
+        ImGui.Spacing();
+        ImGui.Separator();
+        ImGui.Spacing();
+
+        _logHeader = ImGui.CollapsingHeader("Events log");
+
+        if (_logHeader)
+        {
+            ImGui.TreePush("Events");
+
+            if (ImGui.CollapsingHeader("Events"))
+            {
+                ImGui.Checkbox("Connection events", ref _logConnectionEvent);
+                ImGui.Checkbox("DownEvent",         ref _logDownEvent);
+                ImGui.Checkbox("PressEvent",        ref _logPressEvent);
+                ImGui.Checkbox("ReleaseEvent",      ref _logReleaseEvent);
+                ImGui.Checkbox("Trigger events",    ref _logTriggerEvent);
+                ImGui.Checkbox("thumbstick events", ref _logThumbstickEvent);
+            }
+
+            ImGui.TreePop();
+
+            bool clearLogs = ImGui.Button("Clear");
+            if (clearLogs) EventLog.Clear();
+
+            const ImGuiWindowFlags windowFlags = ImGuiWindowFlags.NoScrollWithMouse | ImGuiWindowFlags.NoScrollbar;
+
+            if (ImGui.BeginChild("Event log", ImGuiChildFlags.FrameStyle, windowFlags))
+            {
+                foreach (string message in EventLog)
+                {
+                    if (message == "separator")
+                    {
+                        ImGui.Separator();
+                    }
+                    else
+                    {
+                        ImGui.Text(message);
+                    }
+                }
+
+                ImGui.SetScrollHereY();
+
+                ImGui.EndChild();
+            }
+        }
+
         ImGui.End();
 
         return;
@@ -260,7 +493,7 @@ public static class PyGamePads
             {
                 NVector4 markerFillColor;
 
-                if (player.IsThumbstickDown(thumbstick))
+                if (player.IsThumbstickButtonDown(thumbstick))
                 {
                     markerFillColor = color;
                 }
@@ -328,6 +561,62 @@ public static class PyGamePads
         foreach (PyGamePad gamePad in GamePads.Values)
         {
             gamePad.Update(game);
+
+            // Handle connection events.
+            if (gamePad.WasConnected())
+            {
+                OnPlayerConnected?.Invoke(null, new GamePadEventArgs(gamePad.PlayerIndex));
+            }
+
+            if (gamePad.WasDisconnected())
+            {
+                OnPlayerDisconnected?.Invoke(null, new GamePadEventArgs(gamePad.PlayerIndex));
+            }
+
+            // Handle thumbstick events.
+            foreach (GamePadThumbstick thumbstick in ThumbsticksEnum)
+            {
+                if (gamePad.DidThumbstickMove(thumbstick))
+                {
+                    OnThumbstickMoved?.Invoke(null,
+                                              new GamePadThumbstickEventArgs(thumbstick,
+                                                                             gamePad.GetThumbstick(thumbstick),
+                                                                             gamePad.GetThumbstickDelta(thumbstick),
+                                                                             gamePad.PlayerIndex));
+                }
+            }
+
+            // Handle trigger events.
+            foreach (GamePadTrigger trigger in TriggersEnum)
+            {
+                if (gamePad.DidTriggerMove(trigger))
+                {
+                    OnTriggerMoved?.Invoke(null,
+                                           new GamePadTriggerEventArgs(trigger,
+                                                                       gamePad.GetTrigger(trigger),
+                                                                       gamePad.GetTriggerDelta(trigger),
+                                                                       gamePad.PlayerIndex));
+                }
+            }
+
+            // Handle button events.
+            foreach (GamePadButton button in ButtonsEnum)
+            {
+                if (gamePad.WasButtonPressed(button))
+                {
+                    OnButtonPressed?.Invoke(null, new GamePadButtonEventArgs(button, gamePad.PlayerIndex));
+                }
+
+                if (gamePad.IsButtonDown(button))
+                {
+                    OnButtonDown?.Invoke(null, new GamePadButtonEventArgs(button, gamePad.PlayerIndex));
+                }
+
+                if (gamePad.WasButtonReleased(button))
+                {
+                    OnButtonReleased?.Invoke(null, new GamePadButtonEventArgs(button, gamePad.PlayerIndex));
+                }
+            }
 
             if (gamePad.LastInputTime > LastInputTime)
             {

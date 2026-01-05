@@ -22,8 +22,9 @@ public static class PyMouse
         // Dragging.
         public Point DragStartPosition  { get; set; }
         public bool  PreviousIsDragging { get; set; }
+
         // ReSharper disable MemberHidesStaticFromOuterClass
-        public bool  IsDragging         { get; set; }
+        public bool IsDragging { get; set; }
         // ReSharper restore MemberHidesStaticFromOuterClass
 
         // Multi clicking.
@@ -35,25 +36,29 @@ public static class PyMouse
 
     #region Events
 
+    // Movement & scrolling.
     public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
     public static event EventHandler<MouseScrolledEventArgs>? OnScrolled;
 
+    // Buttons.
     public static event EventHandler<MouseButtonEventArgs>? OnButtonDown;
     public static event EventHandler<MouseButtonEventArgs>? OnButtonPressed;
     public static event EventHandler<MouseButtonEventArgs>? OnButtonReleased;
 
+    // Dragging.
     public static event EventHandler<MouseDraggedEventArgs>? OnDragStarted;
     public static event EventHandler<MouseDraggedEventArgs>? OnDragging;
     public static event EventHandler<MouseDraggedEventArgs>? OnDragReleased;
 
+    // Multi-clicks.
     public static event EventHandler<MouseMultiClickEventArgs>? OnMultiClick;
 
     #endregion
 
     #region Constants
 
-    private const           float         WheelDeltaUnit = 120f;
-    private static readonly MouseButton[] AllButtons;
+    private const            float         WheelDeltaUnit = 120f;
+    internal static readonly MouseButton[] AllButtons;
 
     #endregion
 
@@ -112,6 +117,7 @@ public static class PyMouse
                        ImGuiLog($"     -PrevPos: {args.PreviousPosition}");
                        ImGuiLog($"     -Position: {args.Position}");
                        ImGuiLog($"     -PosDelta: {args.PositionDelta}");
+                       ImGuiLog("separator");
                    };
 
         OnScrolled += (_, args) =>
@@ -121,6 +127,7 @@ public static class PyMouse
                           ImGuiLog($"     -ScrollValue: {args.ScrollValue}");
                           ImGuiLog($"     -ScrollDelta: {args.ScrollDelta}");
                           ImGuiLog($"     -Position: {args.Position}");
+                          ImGuiLog("separator");
                       };
 
         OnButtonDown += (_, args) =>
@@ -129,6 +136,7 @@ public static class PyMouse
                             ImGuiLog("OnButtonDown");
                             ImGuiLog($"     -Button: {args.Button}");
                             ImGuiLog($"     -Position: {args.Position}");
+                            ImGuiLog("separator");
                         };
 
         OnButtonPressed += (_, args) =>
@@ -137,6 +145,7 @@ public static class PyMouse
                                ImGuiLog("OnButtonPressed");
                                ImGuiLog($"     -Button: {args.Button}");
                                ImGuiLog($"     -Position: {args.Position}");
+                               ImGuiLog("separator");
                            };
 
         OnButtonReleased += (_, args) =>
@@ -145,6 +154,7 @@ public static class PyMouse
                                 ImGuiLog("OnButtonReleased");
                                 ImGuiLog($"     -Button: {args.Button}");
                                 ImGuiLog($"     -Position: {args.Position}");
+                                ImGuiLog("separator");
                             };
 
         OnDragStarted += (_, args) =>
@@ -154,6 +164,7 @@ public static class PyMouse
                              ImGuiLog($"     -Button: {args.Button}");
                              ImGuiLog($"     -StartPos: {args.DragStartPosition}");
                              ImGuiLog($"     -Position: {args.Position}");
+                             ImGuiLog("separator");
                          };
 
         OnDragging += (_, args) =>
@@ -163,6 +174,7 @@ public static class PyMouse
                           ImGuiLog($"     -Button: {args.Button}");
                           ImGuiLog($"     -StartPos: {args.DragStartPosition}");
                           ImGuiLog($"     -Position: {args.Position}");
+                          ImGuiLog("separator");
                       };
 
         OnDragReleased += (_, args) =>
@@ -172,6 +184,7 @@ public static class PyMouse
                               ImGuiLog($"     -Button: {args.Button}");
                               ImGuiLog($"     -StartPos: {args.DragStartPosition}");
                               ImGuiLog($"     -Position: {args.Position}");
+                              ImGuiLog("separator");
                           };
 
         OnMultiClick += (_, args) =>
@@ -181,6 +194,7 @@ public static class PyMouse
                             ImGuiLog($"     -Button: {args.Button}");
                             ImGuiLog($"     -Clicks: {args.ClickCount}");
                             ImGuiLog($"     -Position: {args.Position}");
+                            ImGuiLog("separator");
                         };
 
         #endregion
@@ -291,7 +305,7 @@ public static class PyMouse
                 NVector2 directionLineEnd = mousePos + mouseDirN * 20;
 
                 ImPlot.PushPlotClipRect();
-                
+
                 drawList.AddRect(rectMin, rectMax, rectColor);
 
                 if (Moved)
@@ -414,7 +428,7 @@ public static class PyMouse
 
                 foreach (MouseButton button in AllButtons)
                 {
-                    MouseButtonState state           = GetButtonState(button);
+                    MouseButtonState state           = GetButtonStateInternal(button);
                     int              clicks          = GetConsecutiveClicks(button);
                     TimeSpan         lastReleaseTime = state.LastPressTime;
                     bool             multiClicked    = WasButtonMultiClicked(button);
@@ -443,15 +457,22 @@ public static class PyMouse
 
         if (_logHeader)
         {
-            ImGui.Checkbox("Log MovedEvent",      ref _logMovedEvent);
-            ImGui.Checkbox("Log ScrollEvent",     ref _logScrollEvent);
-            ImGui.Checkbox("Log DownEvent",       ref _logDownEvent);
-            ImGui.Checkbox("Log PressEvent",      ref _logPressEvent);
-            ImGui.Checkbox("Log ReleaseEvent",    ref _logReleaseEvent);
-            ImGui.Checkbox("Log DragStartEvent",  ref _logDragStartEvent);
-            ImGui.Checkbox("Log DragEvent",       ref _logDragEvent);
-            ImGui.Checkbox("Log DragEndEvent",    ref _logDragEndEvent);
-            ImGui.Checkbox("Log MultiClickEvent", ref _logMulticlickEvent);
+            ImGui.TreePush("Events");
+
+            if (ImGui.CollapsingHeader("Events"))
+            {
+                ImGui.Checkbox("MovedEvent",      ref _logMovedEvent);
+                ImGui.Checkbox("ScrollEvent",     ref _logScrollEvent);
+                ImGui.Checkbox("DownEvent",       ref _logDownEvent);
+                ImGui.Checkbox("PressEvent",      ref _logPressEvent);
+                ImGui.Checkbox("ReleaseEvent",    ref _logReleaseEvent);
+                ImGui.Checkbox("DragStartEvent",  ref _logDragStartEvent);
+                ImGui.Checkbox("DragEvent",       ref _logDragEvent);
+                ImGui.Checkbox("DragEndEvent",    ref _logDragEndEvent);
+                ImGui.Checkbox("MultiClickEvent", ref _logMulticlickEvent);
+            }
+
+            ImGui.TreePop();
 
             bool clearLogs = ImGui.Button("Clear");
             if (clearLogs) EventLog.Clear();
@@ -462,7 +483,14 @@ public static class PyMouse
             {
                 foreach (string message in EventLog)
                 {
-                    ImGui.Text(message);
+                    if (message == "separator")
+                    {
+                        ImGui.Separator();
+                    }
+                    else
+                    {
+                        ImGui.Text(message);
+                    }
                 }
 
                 ImGui.SetScrollHereY();
@@ -478,34 +506,36 @@ public static class PyMouse
 
     #region Public interface
 
-    public static InputStates GetButton(MouseButton button)
+    // Buttons.
+    public static InputStates GetButtonState(MouseButton button)
     {
-        return GetButtonState(button).InputState;
+        return GetButtonStateInternal(button).InputState;
     }
 
     public static bool IsButtonUp(MouseButton button)
     {
-        return GetButton(button).HasFlag(InputStates.Up);
+        return GetButtonState(button).HasFlag(InputStates.Up);
     }
 
     public static bool IsButtonDown(MouseButton button)
     {
-        return GetButton(button).HasFlag(InputStates.Down);
+        return GetButtonState(button).HasFlag(InputStates.Down);
     }
 
     public static bool WasButtonPressed(MouseButton button)
     {
-        return GetButton(button).HasFlag(InputStates.Pressed);
+        return GetButtonState(button).HasFlag(InputStates.Pressed);
     }
 
     public static bool WasButtonReleased(MouseButton button)
     {
-        return GetButton(button).HasFlag(InputStates.Released);
+        return GetButtonState(button).HasFlag(InputStates.Released);
     }
 
+    // Dragging.
     public static bool WasDragStarted(MouseButton button)
     {
-        MouseButtonState state = GetButtonState(button);
+        MouseButtonState state = GetButtonStateInternal(button);
 
         return state is
                {
@@ -516,12 +546,12 @@ public static class PyMouse
 
     public static bool IsDragging(MouseButton button)
     {
-        return GetButtonState(button).IsDragging;
+        return GetButtonStateInternal(button).IsDragging;
     }
 
     public static bool WasDragReleased(MouseButton button)
     {
-        MouseButtonState state = GetButtonState(button);
+        MouseButtonState state = GetButtonStateInternal(button);
 
         return state is
                {
@@ -532,17 +562,18 @@ public static class PyMouse
 
     public static Point GetDragStartPosition(MouseButton button)
     {
-        return GetButtonState(button).DragStartPosition;
+        return GetButtonStateInternal(button).DragStartPosition;
     }
 
+    // Multi-clicks.
     public static bool WasButtonMultiClicked(MouseButton button)
     {
-        return WasButtonPressed(button) && GetButtonState(button).ConsecutiveClicks > 0;
+        return WasButtonPressed(button) && GetButtonStateInternal(button).ConsecutiveClicks > 0;
     }
 
     public static bool WasButtonMultiClicked(MouseButton button, int multiClicks)
     {
-        MouseButtonState buttonState = GetButtonState(button);
+        MouseButtonState buttonState = GetButtonStateInternal(button);
 
         return WasButtonPressed(button)                        &&
                buttonState.ConsecutiveClicks               > 0 &&
@@ -551,7 +582,7 @@ public static class PyMouse
 
     public static int GetConsecutiveClicks(MouseButton button)
     {
-        return GetButtonState(button).ConsecutiveClicks;
+        return GetButtonStateInternal(button).ConsecutiveClicks;
     }
 
     #endregion
@@ -599,13 +630,13 @@ public static class PyMouse
         // Input state and dragging.
         foreach (MouseButton button in AllButtons)
         {
-            MouseButtonState state = GetButtonState(button);
+            MouseButtonState state = GetButtonStateInternal(button);
 
             UpdateButtonInputState(button, ref state);
             UpdateButtonDragging(button, ref state);
             UpdateButtonConsecutiveClicking(button, ref state);
 
-            SetButtonState(button, state);
+            SetButtonStateInternal(button, state);
         }
     }
 
@@ -785,7 +816,7 @@ public static class PyMouse
         }
     }
 
-    private static MouseButtonState GetButtonState(MouseButton button)
+    private static MouseButtonState GetButtonStateInternal(MouseButton button)
     {
         return button switch
                {
@@ -799,7 +830,7 @@ public static class PyMouse
                };
     }
 
-    private static void SetButtonState(MouseButton button, MouseButtonState state)
+    private static void SetButtonStateInternal(MouseButton button, MouseButtonState state)
     {
         switch (button)
         {

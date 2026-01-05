@@ -16,7 +16,7 @@ public static class PyKeyboard
     #region Fields
 
     // Constants.
-    private static readonly Keys[] AllKeys;
+    internal static readonly Keys[] AllKeys;
 
     // Config.
     private static FocusLostInputBehaviour _focusLostInputBehaviour;
@@ -81,6 +81,7 @@ public static class PyKeyboard
                          if (!_logDownEvent) return;
                          ImGuiLog("OnKeyDown");
                          ImGuiLog($"     -Key: {args.Key}");
+                         ImGuiLog("separator");
                      };
 
         OnKeyPressed += (_, args) =>
@@ -88,6 +89,7 @@ public static class PyKeyboard
                             if (!_logPressEvent) return;
                             ImGuiLog("OnKeyPressed");
                             ImGuiLog($"     -Key: {args.Key}");
+                            ImGuiLog("separator");
                         };
 
         OnKeyReleased += (_, args) =>
@@ -95,6 +97,7 @@ public static class PyKeyboard
                              if (!_logReleaseEvent) return;
                              ImGuiLog("OnKeyReleased");
                              ImGuiLog($"     -Key: {args.Key}");
+                             ImGuiLog("separator");
                          };
 
         #endregion
@@ -182,7 +185,7 @@ public static class PyKeyboard
 
                     foreach (Keys key in AllKeys)
                     {
-                        InputStates state    = GetKey(key);
+                        InputStates state    = GetKeyState(key);
                         bool        pressed  = WasKeyPressed(key);
                         bool        released = WasKeyReleased(key);
 
@@ -216,9 +219,16 @@ public static class PyKeyboard
 
         if (_logHeader)
         {
-            ImGui.Checkbox("Log DownEvent",    ref _logDownEvent);
-            ImGui.Checkbox("Log PressEvent",   ref _logPressEvent);
-            ImGui.Checkbox("Log ReleaseEvent", ref _logReleaseEvent);
+            ImGui.TreePush("Events");
+
+            if (ImGui.CollapsingHeader("Events"))
+            {
+                ImGui.Checkbox("DownEvent",    ref _logDownEvent);
+                ImGui.Checkbox("PressEvent",   ref _logPressEvent);
+                ImGui.Checkbox("ReleaseEvent", ref _logReleaseEvent);
+            }
+
+            ImGui.TreePop();
 
             bool clearLogs = ImGui.Button("Clear");
             if (clearLogs) EventLog.Clear();
@@ -229,7 +239,14 @@ public static class PyKeyboard
             {
                 foreach (string message in EventLog)
                 {
-                    ImGui.Text(message);
+                    if (message == "separator")
+                    {
+                        ImGui.Separator();
+                    }
+                    else
+                    {
+                        ImGui.Text(message);
+                    }
                 }
 
                 ImGui.SetScrollHereY();
@@ -245,7 +262,7 @@ public static class PyKeyboard
 
     #region Public interface
 
-    public static InputStates GetKey(Keys key)
+    public static InputStates GetKeyState(Keys key)
     {
         InputStates inputState = InputStates.None;
 

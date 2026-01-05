@@ -47,6 +47,12 @@ public class PyGame : Game
         ImGui.ShowDemoWindow();
         ImPlot.ShowDemoWindow();
 
+        if (ImGui.IsKeyDown(ImGuiKey.F) && ImGui.IsKeyDown(ImGuiKey.ModShift))
+        {
+            // 60 fps.
+            TargetElapsedTime = TimeSpan.FromTicks(166667);
+        }
+
         bool gameWindow = ImGui.Begin("Game");
 
         if (!gameWindow)
@@ -80,12 +86,6 @@ public class PyGame : Game
             if (sleepMsChanged) InactiveSleepTime = TimeSpan.FromMilliseconds(sleepMs);
 
             ImGui.TextDisabled("Press Shift+F to reset to 60 FPS!");
-
-            if (ImGui.IsKeyDown(ImGuiKey.F) && ImGui.IsKeyDown(ImGuiKey.ModShift))
-            {
-                // 60 fps.
-                TargetElapsedTime = TimeSpan.FromTicks(166667);
-            }
 
             bool isFixed                        = IsFixedTimeStep;
             bool isFixedChanged                 = ImGui.Checkbox("FixedTime", ref isFixed);

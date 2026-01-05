@@ -6,32 +6,24 @@ namespace PsychoEngine.Input;
 public class PyGamePad
 {
     // Todo: implement FNA Ext (gyro, rumble, etc)
-    // TODO: implement events.
-
-    #region Events
-
-    public static event EventHandler? OnButtonDown;
-    public static event EventHandler? OnButtonPressed;
-    public static event EventHandler? OnButtonReleased;
-
-    public static event EventHandler? OnTriggerMoved;
-    public static event EventHandler? OnThumbstickMoved;
-
-    #endregion
 
     #region Fields
-
-    private readonly PlayerIndex _playerIndex;
 
     // States.
     private GamePadState _previousState;
     private GamePadState _currentState;
 
+    // Connection.
+    private bool _previousIsConnected;
+
     #endregion
 
     #region Properties
 
-    public bool IsConnected => GamePad.GetState(_playerIndex).IsConnected;
+    public PlayerIndex PlayerIndex { get; }
+
+    // Device state.
+    public bool IsConnected { get; private set; }
 
     // Time stamps.
     public TimeSpan LastInputTime { get; private set; }
@@ -40,12 +32,24 @@ public class PyGamePad
 
     internal PyGamePad(PlayerIndex playerIndex)
     {
-        _playerIndex = playerIndex;
+        PlayerIndex = playerIndex;
     }
 
     #region Public interface
 
-    public InputStates GetButton(GamePadButton button)
+    // Connection.
+    public bool WasConnected()
+    {
+        return !_previousIsConnected && IsConnected;
+    }
+
+    public bool WasDisconnected()
+    {
+        return _previousIsConnected && !IsConnected;
+    }
+
+    // Buttons.
+    public InputStates GetButtonState(GamePadButton button)
     {
         InputStates inputState = InputStates.None;
 
@@ -83,40 +87,55 @@ public class PyGamePad
         return previousState == ButtonState.Pressed && currentState == ButtonState.Released;
     }
 
+    // Triggers.
     public float GetTrigger(GamePadTrigger trigger)
     {
-        return trigger switch
-               {
-                   GamePadTrigger.None  => 0f,
-                   GamePadTrigger.Left  => _currentState.Triggers.Left,
-                   GamePadTrigger.Right => _currentState.Triggers.Right,
-                   _                    => throw new InvalidOperationException($"Trigger '{trigger}' not supported."),
-               };
+        return GetTriggerInternal(trigger, _currentState);
     }
 
+    public float GetTriggerDelta(GamePadTrigger trigger)
+    {
+        float previousValue = GetTriggerInternal(trigger, _previousState);
+        float currentValue  = GetTriggerInternal(trigger, _currentState);
+
+        return currentValue - previousValue;
+    }
+
+    public bool DidTriggerMove(GamePadTrigger trigger)
+    {
+        float previousValue = GetTriggerInternal(trigger, _previousState);
+        float currentValue  = GetTriggerInternal(trigger, _currentState);
+
+        // BUG: Check if tolerance should be added.
+        return currentValue != previousValue;
+    }
+
+    // Thumbsticks.
     public Vector2 GetThumbstick(GamePadThumbstick thumbstick)
     {
-        return thumbstick switch
-               {
-                   GamePadThumbstick.None => Vector2.Zero,
-                   GamePadThumbstick.Left => _currentState.ThumbSticks.Left,
-                   GamePadThumbstick.Right => _currentState.ThumbSticks.Right,
-                   _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
-               };
+        return GetThumbstickInternal(thumbstick, _currentState);
     }
 
-    public InputStates GetThumbstickButton(GamePadThumbstick thumbstick)
+    public Vector2 GetThumbstickDelta(GamePadThumbstick thumbstick)
+    {
+        Vector2 previousValue = GetThumbstickInternal(thumbstick, _previousState);
+        Vector2 currentValue  = GetThumbstickInternal(thumbstick, _currentState);
+
+        return currentValue - previousValue;
+    }
+
+    public InputStates GetThumbstickButtonState(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
                    GamePadThumbstick.None => InputStates.Up,
-                   GamePadThumbstick.Left => GetButton(GamePadButton.LeftThumb),
-                   GamePadThumbstick.Right => GetButton(GamePadButton.RightThumb),
+                   GamePadThumbstick.Left => GetButtonState(GamePadButton.LeftThumb),
+                   GamePadThumbstick.Right => GetButtonState(GamePadButton.RightThumb),
                    _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
                };
     }
 
-    public bool IsThumbstickUp(GamePadThumbstick thumbstick)
+    public bool IsThumbstickButtonUp(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
@@ -127,7 +146,7 @@ public class PyGamePad
                };
     }
 
-    public bool IsThumbstickDown(GamePadThumbstick thumbstick)
+    public bool IsThumbstickButtonDown(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
@@ -138,7 +157,7 @@ public class PyGamePad
                };
     }
 
-    public bool WasThumbstickPressed(GamePadThumbstick thumbstick)
+    public bool WasThumbstickButtonPressed(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
@@ -149,7 +168,7 @@ public class PyGamePad
                };
     }
 
-    public bool WasThumbstickReleased(GamePadThumbstick thumbstick)
+    public bool WasThumbstickButtonReleased(GamePadThumbstick thumbstick)
     {
         return thumbstick switch
                {
@@ -160,9 +179,18 @@ public class PyGamePad
                };
     }
 
+    public bool DidThumbstickMove(GamePadThumbstick thumbstick)
+    {
+        Vector2 previousValue = GetThumbstickInternal(thumbstick, _previousState);
+        Vector2 currentValue  = GetThumbstickInternal(thumbstick, _currentState);
+
+        return previousValue != currentValue;
+    }
+
+    // Vibration.
     public bool SetVibration(float leftMotor, float rightMotor)
     {
-        return GamePad.SetVibration(_playerIndex, leftMotor, rightMotor);
+        return GamePad.SetVibration(PlayerIndex, leftMotor, rightMotor);
     }
 
     #endregion
@@ -171,11 +199,63 @@ public class PyGamePad
 
     internal void Update(Game game)
     {
+        UpdateGamePadStates(game);
+
+        _previousIsConnected = IsConnected;
+        IsConnected          = GamePad.GetState(PlayerIndex).IsConnected;
+
+        bool receivedAnyInput = false;
+
+        // Update thumbsticks.
+        foreach (GamePadThumbstick thumbstick in PyGamePads.ThumbsticksEnum)
+        {
+            if (GetThumbstick(thumbstick) != Vector2.Zero)
+            {
+                receivedAnyInput = true;
+            }
+        }
+
+        // Update triggers.
+        foreach (GamePadTrigger trigger in PyGamePads.TriggersEnum)
+        {
+            if (GetTrigger(trigger) != 0f)
+            {
+                receivedAnyInput = true;
+            }
+        }
+
+        // Update buttons.
+        foreach (GamePadButton button in PyGamePads.ButtonsEnum)
+        {
+            if (WasButtonPressed(button))
+            {
+                receivedAnyInput = true;
+            }
+
+            if (IsButtonDown(button))
+            {
+                receivedAnyInput = true;
+            }
+
+            if (WasButtonReleased(button))
+            {
+                receivedAnyInput = true;
+            }
+        }
+
+        if (receivedAnyInput)
+        {
+            LastInputTime = PyGameTimes.Update.TotalGameTime;
+        }
+    }
+
+    private void UpdateGamePadStates(Game game)
+    {
         if (game.IsActive && !ImGui.GetIO().WantCaptureKeyboard)
         {
             // Update input state normally.
             _previousState = _currentState;
-            _currentState  = GamePad.GetState(_playerIndex);
+            _currentState  = GamePad.GetState(PlayerIndex);
 
             return;
         }
@@ -196,18 +276,12 @@ public class PyGamePad
             case FocusLostInputBehaviour.KeepUpdating:
                 // Update input state normally.
                 _previousState = _currentState;
-                _currentState  = GamePad.GetState(_playerIndex);
+                _currentState  = GamePad.GetState(PlayerIndex);
                 break;
 
             default:
                 throw new
                     InvalidOperationException($"FocusLostInputBehaviour '{PyGamePads.FocusLostInputBehaviour}' not supported.");
-        }
-
-        if (_previousState != _currentState)
-        {
-            LastInputTime = PyGameTimes.Update.TotalGameTime;
-            // BUG: Last input time not detected correctly.
         }
     }
 
@@ -232,6 +306,28 @@ public class PyGamePad
                    GamePadButton.Start => state.Buttons.Start,
                    GamePadButton.Guide => state.Buttons.BigButton,
                    _ => throw new InvalidOperationException($"Button '{button}' not supported."),
+               };
+    }
+
+    private float GetTriggerInternal(GamePadTrigger trigger, GamePadState state)
+    {
+        return trigger switch
+               {
+                   GamePadTrigger.None  => 0f,
+                   GamePadTrigger.Left  => state.Triggers.Left,
+                   GamePadTrigger.Right => state.Triggers.Right,
+                   _                    => throw new InvalidOperationException($"Trigger '{trigger}' not supported."),
+               };
+    }
+
+    private Vector2 GetThumbstickInternal(GamePadThumbstick thumbstick, GamePadState state)
+    {
+        return thumbstick switch
+               {
+                   GamePadThumbstick.None => Vector2.Zero,
+                   GamePadThumbstick.Left => state.ThumbSticks.Left,
+                   GamePadThumbstick.Right => state.ThumbSticks.Right,
+                   _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
                };
     }
 
