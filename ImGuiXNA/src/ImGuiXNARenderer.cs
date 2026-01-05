@@ -24,13 +24,14 @@ public sealed class ImGuiXnaRenderer : IDisposable
             Declaration = new VertexDeclaration(Size, position, uv, color);
         }
     }
-    
+
     private struct TextureInfo
     {
         public Texture2D Texture   { get; internal set; }
         public bool      IsManaged { get; internal init; }
     }
 
+    // Xna game.
     private readonly Game           _game;
     private          GraphicsDevice _graphicsDevice;
 
@@ -53,13 +54,13 @@ public sealed class ImGuiXnaRenderer : IDisposable
     private          int                                  _nextTexId;
 
     #region Life cycle
-    
+
     public ImGuiXnaRenderer(Game game)
     {
-        _game = game;
-        _textures = new Dictionary<ImTextureID, TextureInfo>();
+        _game      = game;
+        _textures  = new Dictionary<ImTextureID, TextureInfo>();
         _nextTexId = 1;
-        
+
         _rasterizerState = new RasterizerState
                            {
                                CullMode             = CullMode.None,
@@ -70,7 +71,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
                                SlopeScaleDepthBias  = 0,
                            };
     }
-    
+
     public void Dispose()
     {
         // Dispose of graphics resources.
@@ -79,7 +80,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
         _effect?.Dispose();
 
         // Clean up managed textures.
-        foreach(TextureInfo textureInfo in _textures.Values)
+        foreach (TextureInfo textureInfo in _textures.Values)
         {
             if (textureInfo.IsManaged)
             {
@@ -91,20 +92,20 @@ public sealed class ImGuiXnaRenderer : IDisposable
     public unsafe void Initialize(GraphicsDevice graphicsDevice)
     {
         _graphicsDevice = graphicsDevice;
-        
+
         ImGuiIOPtr io = ImGui.GetIO();
-        
+
 #if FNA
         io.BackendRendererName = "imgui_impl_fna".ToUTF8Ptr();
 #endif
 #if MONOGAME
-        io.BackendRendererName =  "imgui_impl_monogame".ToUTF8Ptr();
+        io.BackendRendererName = "imgui_impl_monogame".ToUTF8Ptr();
 #endif
 
         // Create basic effect used to render ImGui.
         int screenWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
         int screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
-        
+
         _effect = new BasicEffect(_graphicsDevice)
                   {
                       World              = Matrix.Identity,
@@ -148,7 +149,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
     }
 
     #endregion
-    
+
     #region Texture binding
 
     public unsafe ImTextureRef BindTexture(Texture2D texture)
@@ -187,16 +188,20 @@ public sealed class ImGuiXnaRenderer : IDisposable
     {
         switch (textureData.Status)
         {
-            case ImTextureStatus.WantCreate: CreateTexture(textureData); break;
+            case ImTextureStatus.WantCreate:
+                CreateTexture(textureData);
+                break;
 
-            case ImTextureStatus.WantUpdates: UpdateTextureData(textureData); break;
+            case ImTextureStatus.WantUpdates:
+                UpdateTextureData(textureData);
+                break;
 
             case ImTextureStatus.WantDestroy:
                 if (textureData.UnusedFrames > 0)
                 {
                     DestroyTexture(textureData);
                 }
-                
+
                 break;
 
             case ImTextureStatus.Destroyed:
@@ -205,7 +210,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
                 // Do nothing.
                 break;
         }
-        
+
         if (textureData.WantDestroyNextFrame)
         {
             DestroyTexture(textureData);
@@ -214,18 +219,18 @@ public sealed class ImGuiXnaRenderer : IDisposable
 
     private unsafe void CreateTexture(ImTextureDataPtr textureData)
     {
-        SurfaceFormat format;
-
-        switch (textureData.Format)
-        {
-            case ImTextureFormat.Rgba32: format = SurfaceFormat.Color; break;
-            case ImTextureFormat.Alpha8: format = SurfaceFormat.Alpha8; break;
-            default:                     throw new NotImplementedException("Texture format not supported.");
-        }
+        SurfaceFormat format = textureData.Format switch
+                               {
+                                   ImTextureFormat.Rgba32 => SurfaceFormat.Color,
+                                   ImTextureFormat.Alpha8 => SurfaceFormat.Alpha8,
+                                   _ => throw new NotSupportedException("Texture format not supported."),
+                               };
 
         Texture2D texture = new(_graphicsDevice, textureData.Width, textureData.Height, false, format);
-        texture.Tag  = "ImGui_Texture";
-        texture.Name = $"Size: {textureData.Width}x{textureData.Height}, Format: {format}, UUID: {textureData.UniqueID}";
+        texture.Tag = "ImGui_Texture";
+
+        texture.Name =
+            $"Size: {textureData.Width}x{textureData.Height}, Format: {format}, UUID: {textureData.UniqueID}";
 
         if (textureData.Pixels != null)
         {
@@ -249,7 +254,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
     {
         IntPtr      texId = textureData.GetTexID();
         TextureInfo textureInfo;
-        
+
         if (!_textures.TryGetValue(texId, out textureInfo)) return;
 
         Console.WriteLine("Destroyed ImGui texture: " + textureInfo.Texture.Name);
@@ -258,7 +263,7 @@ public sealed class ImGuiXnaRenderer : IDisposable
         {
             textureInfo.Texture?.Dispose();
         }
-        
+
         textureData.SetTexID(ImTextureID.Null);
         textureData.SetStatus(ImTextureStatus.Destroyed);
     }
@@ -453,7 +458,8 @@ public sealed class ImGuiXnaRenderer : IDisposable
 
                 if (!_textures.TryGetValue(textureId, out textureInfo))
                 {
-                    throw new InvalidOperationException($"Could not find a texture with id '{textureId}', please check your bindings!");
+                    throw new
+                        InvalidOperationException($"Could not find a texture with id '{textureId}', please check your bindings!");
                 }
 
                 _graphicsDevice.ScissorRectangle = new Rectangle((int)drawCommand.ClipRect.X,
