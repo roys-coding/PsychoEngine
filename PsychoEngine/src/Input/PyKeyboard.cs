@@ -364,7 +364,7 @@ public static class PyKeyboard
 
             default:
                 throw new
-                    InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
+                    NotSupportedException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
         }
     }
 

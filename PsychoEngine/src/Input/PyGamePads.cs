@@ -541,7 +541,7 @@ public static class PyGamePads
 
         if (!playerFound || player == null)
         {
-            throw new InvalidOperationException($"Player '{playerIndex}' not supported.");
+            throw new NotSupportedException($"Player '{playerIndex}' not supported.");
         }
 
         return player;

@@ -131,7 +131,7 @@ public class PyGamePad
                    GamePadThumbstick.None => InputStates.Up,
                    GamePadThumbstick.Left => GetButtonState(GamePadButton.LeftThumb),
                    GamePadThumbstick.Right => GetButtonState(GamePadButton.RightThumb),
-                   _ => throw new InvalidOperationException($"Thumbstick '{thumbstick}' not supported."),
+                   _ => throw new NotSupportedException($"Thumbstick '{thumbstick}' not supported."),
                };
     }
 
@@ -164,7 +164,7 @@ public class PyGamePad
                    GamePadThumbstick.None => false,
                    GamePadThumbstick.Left => WasButtonPressed(GamePadButton.LeftThumb),
                    GamePadThumbstick.Right => WasButtonPressed(GamePadButton.RightThumb),
-                   _ => throw new InvalidOperationException($"Thumbsticks '{thumbstick}' not supported."),
+                   _ => throw new NotSupportedException($"Thumbsticks '{thumbstick}' not supported."),
                };
     }
 
@@ -305,7 +305,7 @@ public class PyGamePad
                    GamePadButton.Back => state.Buttons.Back,
                    GamePadButton.Start => state.Buttons.Start,
                    GamePadButton.Guide => state.Buttons.BigButton,
-                   _ => throw new InvalidOperationException($"Button '{button}' not supported."),
+                   _ => throw new NotSupportedException($"Button '{button}' not supported."),
                };
     }
 

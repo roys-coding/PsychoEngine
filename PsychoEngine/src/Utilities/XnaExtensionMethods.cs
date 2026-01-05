@@ -17,7 +17,7 @@ public static class XnaExtensionMethods
                        MouseButton.Right => mouseState.RightButton,
                        MouseButton.X1 => mouseState.XButton1,
                        MouseButton.X2 => mouseState.XButton2,
-                       _ => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
+                       _ => throw new NotSupportedException($"MouseButton '{button}' not supported."),
                    };
         }
     }

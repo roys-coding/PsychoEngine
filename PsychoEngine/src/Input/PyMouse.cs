@@ -682,7 +682,7 @@ public static class PyMouse
 
             default:
                 throw new
-                    InvalidOperationException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
+                    NotSupportedException($"FocusLostInputBehaviour '{_focusLostInputBehaviour}' not supported.");
         }
     }
 
@@ -730,7 +730,7 @@ public static class PyMouse
                 break;
             }
 
-            default: throw new InvalidOperationException($"Mouse state '{currentState}' not supported.");
+            default: throw new NotSupportedException($"Mouse state '{currentState}' not supported.");
         }
 
         state.InputState = inputState;
@@ -826,7 +826,7 @@ public static class PyMouse
                    MouseButton.Right  => _rightButton,
                    MouseButton.X1     => _x1Button,
                    MouseButton.X2     => _x2Button,
-                   _                  => throw new InvalidOperationException($"MouseButton '{button}' not supported."),
+                   _                  => throw new NotSupportedException($"MouseButton '{button}' not supported."),
                };
     }
 
@@ -856,7 +856,7 @@ public static class PyMouse
                 _x2Button = state;
                 break;
 
-            default: throw new InvalidOperationException($"MouseButton '{button}' not supported.");
+            default: throw new NotSupportedException($"MouseButton '{button}' not supported.");
         }
     }
 
