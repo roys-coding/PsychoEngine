@@ -5,7 +5,7 @@ namespace PsychoEngine.Input;
 
 public class PyGamePad
 {
-    // Todo: implement FNA Ext (gyro, rumble, etc)
+    // TODO: implement FNA Ext (gyro, rumble, etc)
 
     #region Fields
 

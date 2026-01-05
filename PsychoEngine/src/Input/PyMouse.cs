@@ -10,7 +10,9 @@ public static class PyMouse
 {
     // TODO: Implement FNA Click ext.
     // TODO: Mouse set position.
+    // TODO: Implement mouse cursors for MonoGame.
     // TODO: Make input configurable.
+    // TODO: Touch input.
 
     #region Subclasses
 
