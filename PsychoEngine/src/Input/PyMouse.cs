@@ -10,11 +10,29 @@ public static class PyMouse
 {
     // TODO: Implement FNA Click ext.
     // TODO: Mouse set position.
+    // TODO: Make input configurable.
 
-    // Constants.
-    private const float WheelDeltaUnit = 120f;
+    #region Subclasses
 
-    // Events.
+    private struct MouseButtonState
+    {
+        // State.
+        public InputStates InputState { get; set; }
+
+        // Dragging.
+        public Point DragStartPosition  { get; set; }
+        public bool  PreviousIsDragging { get; set; }
+        public bool  IsDragging         { get; set; }
+
+        // Multi clicking.
+        public TimeSpan LastPressTime     { get; set; }
+        public int      ConsecutiveClicks { get; set; }
+    }
+
+    #endregion
+
+    #region Events
+
     public static event EventHandler<MouseMovedEventArgs>?    OnMoved;
     public static event EventHandler<MouseScrolledEventArgs>? OnScrolled;
 
@@ -28,10 +46,16 @@ public static class PyMouse
 
     public static event EventHandler<MouseMultiClickEventArgs>? OnMultiClick;
 
-    // Constants.
+    #endregion
+
+    #region Constants
+
+    private const           float         WheelDeltaUnit = 120f;
     private static readonly MouseButton[] AllButtons;
 
-    // TODO: Make input configurable.
+    #endregion
+
+    #region Fields
 
     // Config.
     private const  int                     DragThreshold                    = 5;
@@ -49,6 +73,10 @@ public static class PyMouse
     private static MouseButtonState _x1Button;
     private static MouseButtonState _x2Button;
 
+    #endregion
+
+    #region Properties
+
     // Time stamps.
     public static TimeSpan LastMoveTime  { get; private set; }
     public static TimeSpan LastInputTime { get; private set; }
@@ -64,6 +92,8 @@ public static class PyMouse
     public static float ScrollValue         { get; private set; }
     public static float ScrollDelta         { get; private set; }
     public static bool  Scrolled            { get; private set; }
+
+    #endregion
 
     static PyMouse()
     {
@@ -156,6 +186,8 @@ public static class PyMouse
 
     #region ImGui
 
+    #region ImGui fields
+
     private const  int  LogCapacity = 100;
     private static bool _logMovedEvent;
     private static bool _logScrollEvent = true;
@@ -171,6 +203,8 @@ public static class PyMouse
 
     private static readonly List<string> EventLog = new(LogCapacity);
     private static          bool         _logHeader;
+
+    #endregion
 
     private static void ImGuiLog(string message)
     {
@@ -440,6 +474,8 @@ public static class PyMouse
 
     #endregion
 
+    #region Public interface
+
     public static InputStates GetButton(MouseButton button)
     {
         return GetButtonState(button).InputState;
@@ -516,7 +552,9 @@ public static class PyMouse
         return GetButtonState(button).ConsecutiveClicks;
     }
 
-    #region Internal methods
+    #endregion
+
+    #region Non public methods
 
     internal static void Update(Game game)
     {
@@ -534,7 +572,7 @@ public static class PyMouse
                             new MouseMovedEventArgs(PreviousPosition,
                                                     Position,
                                                     PositionDelta,
-                                                    PyKeyboard.ModifierKeys));
+                                                    PyKeyboard.ModKeysDown));
 
             LastMoveTime = PyGameTimes.Update.TotalGameTime;
         }
@@ -551,7 +589,7 @@ public static class PyMouse
                                new MouseScrolledEventArgs(ScrollValue,
                                                           ScrollDelta,
                                                           Position,
-                                                          PyKeyboard.ModifierKeys));
+                                                          PyKeyboard.ModKeysDown));
 
             LastInputTime = PyGameTimes.Update.TotalGameTime;
         }
@@ -632,11 +670,11 @@ public static class PyMouse
                     inputState |= InputStates.Pressed;
 
                     OnButtonPressed?.Invoke(null,
-                                            new MouseButtonEventArgs(button, Position, PyKeyboard.ModifierKeys));
+                                            new MouseButtonEventArgs(button, Position, PyKeyboard.ModKeysDown));
                 }
 
                 inputState |= InputStates.Down;
-                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, PyKeyboard.ModifierKeys));
+                OnButtonDown?.Invoke(null, new MouseButtonEventArgs(button, Position, PyKeyboard.ModKeysDown));
 
                 receivedAnyInput = true;
                 break;
@@ -651,7 +689,7 @@ public static class PyMouse
                     inputState |= InputStates.Released;
 
                     OnButtonReleased?.Invoke(null,
-                                             new MouseButtonEventArgs(button, Position, PyKeyboard.ModifierKeys));
+                                             new MouseButtonEventArgs(button, Position, PyKeyboard.ModKeysDown));
 
                     receivedAnyInput = true;
                 }
@@ -687,7 +725,7 @@ public static class PyMouse
                                        new MouseDraggedEventArgs(button,
                                                                  state.DragStartPosition,
                                                                  Position,
-                                                                 PyKeyboard.ModifierKeys));
+                                                                 PyKeyboard.ModKeysDown));
             }
 
             state.DragStartPosition = Point.Zero;
@@ -706,7 +744,7 @@ public static class PyMouse
                                       new MouseDraggedEventArgs(button,
                                                                 state.DragStartPosition,
                                                                 Position,
-                                                                PyKeyboard.ModifierKeys));
+                                                                PyKeyboard.ModKeysDown));
             }
         }
 
@@ -716,7 +754,7 @@ public static class PyMouse
                                new MouseDraggedEventArgs(button,
                                                          state.DragStartPosition,
                                                          Position,
-                                                         PyKeyboard.ModifierKeys));
+                                                         PyKeyboard.ModKeysDown));
         }
     }
 
@@ -734,7 +772,7 @@ public static class PyMouse
                                      new MouseMultiClickEventArgs(button,
                                                                   state.ConsecutiveClicks,
                                                                   Position,
-                                                                  PyKeyboard.ModifierKeys));
+                                                                  PyKeyboard.ModKeysDown));
             }
             else
             {

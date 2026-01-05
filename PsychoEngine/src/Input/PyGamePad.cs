@@ -7,21 +7,43 @@ public class PyGamePad
 {
     // Todo: implement FNA Ext (gyro, rumble, etc)
     // TODO: implement events.
+
+    #region Events
+
+    public static event EventHandler? OnButtonDown;
+    public static event EventHandler? OnButtonPressed;
+    public static event EventHandler? OnButtonReleased;
+
+    public static event EventHandler? OnTriggerMoved;
+    public static event EventHandler? OnThumbstickMoved;
+
+    #endregion
+
+    #region Fields
+
     private readonly PlayerIndex _playerIndex;
 
     // States.
     private GamePadState _previousState;
     private GamePadState _currentState;
 
+    #endregion
+
+    #region Properties
+
     public bool IsConnected => GamePad.GetState(_playerIndex).IsConnected;
 
     // Time stamps.
     public TimeSpan LastInputTime { get; private set; }
 
+    #endregion
+
     internal PyGamePad(PlayerIndex playerIndex)
     {
         _playerIndex = playerIndex;
     }
+
+    #region Public interface
 
     public InputStates GetButton(GamePadButton button)
     {
@@ -143,7 +165,9 @@ public class PyGamePad
         return GamePad.SetVibration(_playerIndex, leftMotor, rightMotor);
     }
 
-    #region Internal methods
+    #endregion
+
+    #region Non public methods
 
     internal void Update(Game game)
     {

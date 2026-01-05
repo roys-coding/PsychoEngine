@@ -5,10 +5,15 @@ namespace PsychoEngine.Input;
 
 public static class PyKeyboard
 {
-    // Events.
+    #region Events
+
     public static event EventHandler<KeyboardEventArgs>? OnKeyDown;
     public static event EventHandler<KeyboardEventArgs>? OnKeyPressed;
     public static event EventHandler<KeyboardEventArgs>? OnKeyReleased;
+
+    #endregion
+
+    #region Fields
 
     // Constants.
     private static readonly Keys[] AllKeys;
@@ -21,9 +26,14 @@ public static class PyKeyboard
     private static KeyboardState _previousState;
     private static Keys[]?       _allKeysDown;
 
+    #endregion
+
+    #region Properties
+
     // Time stamps.
     public static TimeSpan LastInputTime { get; private set; }
 
+    // Key states.
     public static Keys[] AllKeysDown
     {
         get
@@ -35,13 +45,13 @@ public static class PyKeyboard
         }
     }
 
-    // Mod keys.
+    // Modifier keys.
     public static bool ModShift   => IsKeyDown(Keys.LeftShift)   || IsKeyDown(Keys.RightShift);
     public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
     public static bool ModAlt     => IsKeyDown(Keys.LeftAlt)     || IsKeyDown(Keys.RightAlt);
     public static bool ModSuper   => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
 
-    public static ModifierKeys ModifierKeys
+    public static ModifierKeys ModKeysDown
     {
         get
         {
@@ -55,6 +65,8 @@ public static class PyKeyboard
             return modifierKeys;
         }
     }
+
+    #endregion
 
     static PyKeyboard()
     {
@@ -90,6 +102,8 @@ public static class PyKeyboard
 
     #region ImGui
 
+    #region ImGui fields
+
     private const  int  LogCapacity     = 100;
     private static bool _activeKeysOnly = true;
     private static bool _logDownEvent;
@@ -100,6 +114,8 @@ public static class PyKeyboard
 
     private static readonly List<string> EventLog = new(LogCapacity);
     private static          bool         _logHeader;
+
+    #endregion
 
     private static void ImGuiLog(string message)
     {
@@ -227,6 +243,8 @@ public static class PyKeyboard
 
     #endregion
 
+    #region Public interface
+
     public static InputStates GetKey(Keys key)
     {
         InputStates inputState = InputStates.None;
@@ -259,7 +277,9 @@ public static class PyKeyboard
         return _previousState[key] == KeyState.Down && _currentState[key] == KeyState.Up;
     }
 
-    #region Internal methods
+    #endregion
+
+    #region Non public methods
 
     internal static void Update(Game game)
     {
@@ -275,19 +295,19 @@ public static class PyKeyboard
         {
             if (WasKeyPressed(key))
             {
-                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key, ModifierKeys));
+                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key, ModKeysDown));
                 receivedAnyInput = true;
             }
 
             if (IsKeyDown(key))
             {
-                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key, ModifierKeys));
+                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key, ModKeysDown));
                 receivedAnyInput = true;
             }
 
             if (WasKeyReleased(key))
             {
-                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key, ModifierKeys));
+                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key, ModKeysDown));
                 receivedAnyInput = true;
             }
         }

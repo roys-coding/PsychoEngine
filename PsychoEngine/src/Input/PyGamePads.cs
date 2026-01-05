@@ -7,9 +7,10 @@ namespace PsychoEngine.Input;
 
 public static class PyGamePads
 {
-    // Constants.
-    public static readonly int SupportedPlayersCount;
+    #region Fields
 
+    // Constants.
+    private static readonly int             SupportedPlayersCount;
     private static readonly PlayerIndex[]   PlayersEnum;
     private static readonly GamePadButton[] ButtonsEnum;
 
@@ -19,12 +20,18 @@ public static class PyGamePads
     // Config.
     internal static FocusLostInputBehaviour FocusLostInputBehaviour = FocusLostInputBehaviour.ClearStates;
 
+    #endregion
+
+    #region Properties
+
     // GamePad states.
     public static bool IsAnyConnected { get; private set; }
 
     // Time stamps. 
     public static TimeSpan    LastInputTime        { get; private set; }
     public static PlayerIndex LastInputPlayerIndex { get; private set; }
+
+    #endregion
 
     static PyGamePads()
     {
@@ -47,11 +54,15 @@ public static class PyGamePads
 
     #region ImGui
 
+    #region ImGui fields
+
     private static readonly string[] PlayerNames    = Enum.GetNames<PlayerIndex>();
     private static readonly string[] FocusLostNames = Enum.GetNames<FocusLostInputBehaviour>();
 
     private static int  _playerIndex;
     private static bool _activeButtonsOnly = true;
+
+    #endregion
 
     private static void ImGuiLayout(object? sender, EventArgs eventArgs)
     {
@@ -288,6 +299,8 @@ public static class PyGamePads
 
     #endregion
 
+    #region Public interface
+
     public static PyGamePad GetPlayer(PlayerIndex playerIndex)
     {
         PyGamePad? player;
@@ -306,7 +319,9 @@ public static class PyGamePads
         return GetPlayer(playerIndex).IsConnected;
     }
 
-    #region Internal methods
+    #endregion
+
+    #region Non public methods
 
     internal static void Update(Game game)
     {
