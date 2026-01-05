@@ -103,36 +103,28 @@ public sealed class ImGuiXnaRenderer : IDisposable
 #endif
 
         // Create basic effect used to render ImGui.
-        int screenWidth  = _graphicsDevice.PresentationParameters.BackBufferWidth;
-        int screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
-
         _effect = new BasicEffect(_graphicsDevice)
                   {
                       World              = Matrix.Identity,
                       View               = Matrix.Identity,
                       TextureEnabled     = true,
                       VertexColorEnabled = true,
-                      Projection = Matrix.CreateOrthographicOffCenter(0.0f,
-                                                                      screenWidth,
-                                                                      screenHeight,
-                                                                      0.0f,
-                                                                      -1.0f,
-                                                                      1.0f),
                   };
+        
+        OnWindowSizeChanged();
+    }
 
-        _game.Window.ClientSizeChanged += (_, _) =>
-                                          {
-                                              int screenWd = _graphicsDevice.PresentationParameters.BackBufferWidth;
-                                              int screenHg = _graphicsDevice.PresentationParameters.BackBufferHeight;
+    private void OnWindowSizeChanged()
+    {
+        float screenWidth = _graphicsDevice.PresentationParameters.BackBufferWidth;
+        float screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
 
-                                              _effect.Projection =
-                                                  Matrix.CreateOrthographicOffCenter(0.0f,
-                                                      screenWd,
-                                                      screenHg,
-                                                      0.0f,
-                                                      -1.0f,
-                                                      1.0f);
-                                          };
+        _effect.Projection = Matrix.CreateOrthographicOffCenter(0.0f,
+                                                                screenWidth,
+                                                                screenHeight,
+                                                                0.0f,
+                                                                -1.0f,
+                                                                1.0f);
     }
 
     #endregion
@@ -141,6 +133,19 @@ public sealed class ImGuiXnaRenderer : IDisposable
 
     public void Render()
     {
+        ImGuiIOPtr io = ImGui.GetIO();
+
+        // Check if the window size has changed.
+        float screenWidth       = _graphicsDevice.PresentationParameters.BackBufferWidth;
+        float screenHeight      = _graphicsDevice.PresentationParameters.BackBufferHeight;
+
+        // ReSharper disable CompareOfFloatsByEqualityOperator
+        if (screenWidth != io.DisplaySize.X || screenHeight != io.DisplaySize.Y)
+        {
+            OnWindowSizeChanged();
+        }
+        // ReSharper restore CompareOfFloatsByEqualityOperator
+        
         ImGui.Render();
 
         ImDrawDataPtr drawData = ImGui.GetDrawData();
