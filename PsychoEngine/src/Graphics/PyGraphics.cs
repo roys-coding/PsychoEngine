@@ -4,6 +4,12 @@ namespace PsychoEngine.Graphics;
 
 public static class PyGraphics
 {
+    // TODO: Timings.
+    // TODO: Rendering.
+    // TODO: Persistent resolutions.
+    // TODO: Rendering resolution.
+    // TODO: ImGui debug window.
+    
     public static class Window
     {
         #region Properties
