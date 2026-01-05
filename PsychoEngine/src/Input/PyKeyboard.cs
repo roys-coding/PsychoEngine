@@ -51,7 +51,7 @@ public static class PyKeyboard
     public static bool ModAlt     => IsKeyDown(Keys.LeftAlt)     || IsKeyDown(Keys.RightAlt);
     public static bool ModSuper   => IsKeyDown(Keys.LeftWindows) || IsKeyDown(Keys.RightWindows);
 
-    public static ModifierKeys ModKeysDown
+    public static ModifierKeys ModifierKeysDown
     {
         get
         {
@@ -295,19 +295,19 @@ public static class PyKeyboard
         {
             if (WasKeyPressed(key))
             {
-                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key, ModKeysDown));
+                OnKeyPressed?.Invoke(game, new KeyboardEventArgs(key, ModifierKeysDown));
                 receivedAnyInput = true;
             }
 
             if (IsKeyDown(key))
             {
-                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key, ModKeysDown));
+                OnKeyDown?.Invoke(game, new KeyboardEventArgs(key, ModifierKeysDown));
                 receivedAnyInput = true;
             }
 
             if (WasKeyReleased(key))
             {
-                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key, ModKeysDown));
+                OnKeyReleased?.Invoke(game, new KeyboardEventArgs(key, ModifierKeysDown));
                 receivedAnyInput = true;
             }
         }
