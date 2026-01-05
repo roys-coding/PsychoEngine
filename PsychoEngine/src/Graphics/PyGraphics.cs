@@ -1,4 +1,8 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System.Diagnostics.CodeAnalysis;
+using Hexa.NET.ImGui;
+using Microsoft.Xna.Framework.Graphics;
+using PsychoEngine.Utilities;
+using Vector2 = System.Numerics.Vector2;
 
 namespace PsychoEngine.Graphics;
 
@@ -18,7 +22,15 @@ public static class PyGraphics
         public static string Title
         {
             get => GameWindow.Title;
-            set => GameWindow.Title = value;
+            set
+            {
+                if (value is null)
+                {
+                    throw new ArgumentException("Title cannot be null.", nameof(value));
+                }
+                
+                GameWindow.Title = value;
+            }
         }
 
         public static bool IsMouseVisible
@@ -77,10 +89,20 @@ public static class PyGraphics
 
         public static void SetSize(int windowWidth, int windowHeight)
         {
+            if (windowWidth <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(windowWidth), $"{windowWidth} must be greater than zero.");
+            }
+            if (windowHeight <= 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(windowHeight),
+                                                      $"{windowHeight} must be greater than zero.");
+            }
+            
             DeviceManager.PreferredBackBufferWidth = windowWidth;
             DeviceManager.PreferredBackBufferHeight = windowHeight;
             
-            DeviceManager.ApplyChanges();
+            ApplyChanges();
         }
 
         #endregion
@@ -92,7 +114,7 @@ public static class PyGraphics
             DeviceManager.IsFullScreen = false;
             GameWindow.IsBorderlessEXT  = false;
             
-            DeviceManager.ApplyChanges();
+            ApplyChanges();
         }
 
         private static void SetModeFullscreen()
@@ -100,7 +122,7 @@ public static class PyGraphics
             DeviceManager.IsFullScreen = true;
             GameWindow.IsBorderlessEXT  = false;
             
-            DeviceManager.ApplyChanges();
+            ApplyChanges();
         }
 
         private static void SetModeBorderless()
@@ -108,7 +130,7 @@ public static class PyGraphics
             DeviceManager.IsFullScreen = true;
             GameWindow.IsBorderlessEXT  = false;
             
-            DeviceManager.ApplyChanges();
+            ApplyChanges();
         }
 
         #endregion
@@ -116,15 +138,29 @@ public static class PyGraphics
 
     #region Fields
 
-    public static GraphicsDeviceManager DeviceManager { get; private set; }
-    public static GraphicsDevice        Device { get; private set; }
+    private static bool                   _isInitialized;
+    private static bool                   _isDeviceInitialized;
 
     #endregion
 
     #region Properties
 
-    public static bool VerticalSync => DeviceManager.SynchronizeWithVerticalRetrace;
-    public static bool FixedTimeStep => PyGame.Instance.IsFixedTimeStep;
+    // Device.
+    public static GraphicsDeviceManager DeviceManager
+    {
+        get => field ?? throw new NullReferenceException("Attempted to access PyGraphics before initialization.");
+        private set;
+    }
+
+    public static GraphicsDevice Device
+    {
+        get => field ?? throw new NullReferenceException("Attempted to access GraphicsDevice before initialization.");
+        private set;
+    }
+
+    // Graphics settings.
+    public static bool                  VerticalSync  => DeviceManager.SynchronizeWithVerticalRetrace;
+    public static bool                  FixedTimeStep => PyGame.Instance.IsFixedTimeStep;
     
     private static GameWindow GameWindow => PyGame.Instance.Window;
 
@@ -135,7 +171,7 @@ public static class PyGraphics
     public static void SetVerticalSync(bool vSync)
     {
         DeviceManager.SynchronizeWithVerticalRetrace = vSync;
-        DeviceManager.ApplyChanges();
+        ApplyChanges();
     }
 
     public static void SetFixedTimeStep(bool fixedTimeStep)
@@ -149,25 +185,101 @@ public static class PyGraphics
 
     internal static void Initialize()
     {
+        if (_isInitialized)
+        {
+            throw new InvalidOperationException("PyGraphics has already been initialized.");
+        }
+        
         DeviceManager = new GraphicsDeviceManager(PyGame.Instance);
 
         DeviceManager.DeviceCreated += OnDeviceCreated;
         GameWindow.ClientSizeChanged += OnClientSizeChanged;
+
+        _isInitialized = true;
+
+        #region ImGui
+
+        PyGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+
+        #endregion
     }
+
+    #region ImGui
+
+    private static unsafe void ImGuiOnLayout(object? sender, EventArgs e)
+    {
+        bool windowOpen = ImGui.Begin($"{PyFonts.Lucide.Monitor} Graphics");
+
+        if (!windowOpen)
+        {
+            ImGui.End();
+            return;
+        }
+        
+        ImGui.SeparatorText("Window");
+
+        string windowTitle             = Window.Title;
+        bool   titleChanged            = ImGui.InputText("Title", ref windowTitle, 255);
+        if (titleChanged) Window.Title = windowTitle;
+
+        bool mouseVisible                              = Window.IsMouseVisible;
+        bool mouseVisibleChanged                       = ImGui.Checkbox("Is Mouse Visible", ref mouseVisible);
+        if (mouseVisibleChanged) Window.IsMouseVisible = mouseVisible;
+
+        bool allowResizing                                 = Window.AllowUserResizing;
+        bool allowResizingChanged                          = ImGui.Checkbox("Allow Resizing", ref allowResizing);
+        if (allowResizingChanged) Window.AllowUserResizing = allowResizing;
+
+        int[] windowSize =
+        [
+            Window.Width, Window.Height,
+        ];
+
+        fixed (int* windowSizePtr = windowSize)
+        {
+            bool    sizeChanged = ImGui.DragInt2("Size", windowSizePtr, 1, ImGuiSliderFlags.AlwaysClamp);
+            if (sizeChanged) Window.SetSize(windowSize[0], windowSize[1]);
+        }
+
+        ImGui.SeparatorText("Graphics");
+        
+        bool vsync        = VerticalSync;
+        bool vsyncChanged = ImGui.Checkbox("Vertical Sync", ref vsync);
+        if (vsyncChanged) SetVerticalSync(vsync);
+        
+        bool fixedStep        = FixedTimeStep;
+        bool fixedStepChanged = ImGui.Checkbox("FixedTimeStep", ref fixedStep);
+        if (fixedStepChanged) SetFixedTimeStep(fixedStep);
+        
+        ImGui.End();
+    }
+
+    #endregion
 
     internal static void Draw()
     {
         Device.Clear(Color.CornflowerBlue);
     }
 
+    private static void ApplyChanges()
+    {
+        if (!_isDeviceInitialized)
+        {
+            return;
+        }
+        
+        DeviceManager.ApplyChanges();
+    }
+
     private static void OnDeviceCreated(object? sender, EventArgs e)
     {
-        Device = DeviceManager.GraphicsDevice;
+        Device               = DeviceManager.GraphicsDevice;
+        _isDeviceInitialized = true;
     }
 
     private static void OnClientSizeChanged(object? sender, EventArgs e)
     {
-        DeviceManager.ApplyChanges();
+        ApplyChanges();
     }
 
     #endregion

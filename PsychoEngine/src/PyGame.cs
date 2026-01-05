@@ -17,20 +17,31 @@ public class PyGame : Game
     {
         if (Instance is not null)
         {
-            throw new InvalidOperationException("CoreEngine has already been initialized.");
+            throw new InvalidOperationException($"{nameof(PyGame)} has already been initialized.");
         }
 
+        // Initialize singleton.
         Instance = this;
+
+        // Create ImGui.
+        ImGuiManager          =  new ImGuiManager(this);
+        ImGuiManager.OnLayout += ImGuiOnLayout;
         
+        // Initialize graphics.
         PyGraphics.Initialize();
         PyGraphics.Window.Title = windowTitle;
         PyGraphics.Window.SetSize(windowWidth, windowHeight);
         PyGraphics.SetVerticalSync(false);
-
-        ImGuiManager = new ImGuiManager(this);
-
-        ImGuiManager.OnLayout += ImGuiOnLayout;
     }
+
+    #region ImGui
+
+    #region ImGui fields
+
+    private bool _showDemoWindow = false;
+    private bool _showPlotDemoWindow = false;
+
+    #endregion
 
     private void ImGuiOnLayout(object? sender, EventArgs eventArgs)
     {
@@ -39,8 +50,8 @@ public class PyGame : Game
 
         ImGui.DockSpaceOverViewport(dockFlags);
 
-        ImGui.ShowDemoWindow();
-        ImPlot.ShowDemoWindow();
+        if (_showDemoWindow) ImGui.ShowDemoWindow();
+        if (_showPlotDemoWindow) ImPlot.ShowDemoWindow();
 
         if (ImGui.IsKeyDown(ImGuiKey.F) && ImGui.IsKeyDown(ImGuiKey.ModShift))
         {
@@ -48,7 +59,12 @@ public class PyGame : Game
             TargetElapsedTime = TimeSpan.FromTicks(166667);
         }
 
-        bool gameWindow = ImGui.Begin($"{PyFonts.Lucide.Apple} Game");
+        if (ImGui.IsKeyDown(ImGuiKey.Escape))
+        {
+            Exit();
+        }
+
+        bool gameWindow = ImGui.Begin($"{PyFonts.Lucide.Box} Game");
 
         if (!gameWindow)
         {
@@ -59,7 +75,10 @@ public class PyGame : Game
         bool exitPressed = ImGui.Button("Exit");
         ImGui.SameLine();
         ImGui.TextDisabled("(ESC)");
-        if (exitPressed || ImGui.IsKeyDown(ImGuiKey.Escape)) Exit();
+        if (exitPressed) Exit();
+        
+        ImGui.Checkbox("Show demo window", ref _showDemoWindow);
+        ImGui.Checkbox("Show plot demo window", ref _showPlotDemoWindow);
 
         // bool timesHeader = ImGui.CollapsingHeader("Times");
         //
@@ -98,6 +117,8 @@ public class PyGame : Game
 
         ImGui.End();
     }
+
+    #endregion
 
     protected override void Initialize()
     {
