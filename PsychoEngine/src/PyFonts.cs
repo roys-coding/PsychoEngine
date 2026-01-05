@@ -1,6 +1,6 @@
-﻿namespace PsychoEngine.Core;
+﻿namespace PsychoEngine;
 
-internal static class Fonts
+internal static class PyFonts
 {
     #region Subclasses
 

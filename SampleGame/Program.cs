@@ -1,4 +1,7 @@
-﻿using PsychoEngine.Core;
+﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using PsychoEngine;
+using PsychoEngine.Input;
 
 namespace SampleGame;
 
@@ -6,7 +9,7 @@ public static class Program
 {
     public static void Main()
     {
-        using CoreEngine engine = new("Sample Game", 1280, 720);
+        using PyGame engine = new("Sample Game", 1280, 720);
         engine.Run();
     }
 }

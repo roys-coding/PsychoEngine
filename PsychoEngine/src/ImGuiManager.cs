@@ -6,13 +6,13 @@ using Microsoft.Xna.Framework.Graphics;
 using Vector2 = System.Numerics.Vector2;
 using Vector4 = System.Numerics.Vector4;
 
-namespace PsychoEngine.Core;
+namespace PsychoEngine;
 
 public class ImGuiManager
 {
-    private const    string        FontsPath = @"Content\Fonts\";
-    private const    int         FontSize  = 15;
-    private const    int         IconsFontSize  = 19;
+    private const    string           FontsPath     = @"Content\Fonts\";
+    private const    int              FontSize      = 15;
+    private const    int              IconsFontSize = 19;
     private readonly ImGuiXnaRenderer _renderer;
     private readonly ImGuiXnaPlatform _platform;
 
@@ -27,14 +27,14 @@ public class ImGuiManager
     public unsafe void Initialize(GraphicsDevice graphicsDevice)
     {
         // Set up ImGui context.
-        ImGuiContextPtr  context     = ImGui.CreateContext();
+        ImGuiContextPtr context = ImGui.CreateContext();
         ImGui.SetCurrentContext(context);
-        
+
         // Set up ImPlot context.
         ImPlotContextPtr plotContext = ImPlot.CreateContext();
         ImPlot.SetImGuiContext(context);
         ImPlot.SetCurrentContext(plotContext);
-        
+
         _platform.Initialize(graphicsDevice);
         _renderer.Initialize(graphicsDevice);
 
@@ -53,18 +53,18 @@ public class ImGuiManager
 
         #region ImGui colors
 
-        Vector4       black   = new(0f, 0f, 0f, 1.0f);
-        Vector4       white   = new(1f, 1f, 1f, 1.0f);
-        Vector4       dark0   = new(15  / 255f, 15  / 255f, 15  / 255f, 1.0f);
-        Vector4       dark1   = new(26  / 255f, 26  / 255f, 26  / 255f, 1.0f);
-        Vector4       dark2   = new(38  / 255f, 38  / 255f, 38  / 255f, 1.0f);
-        Vector4       medium0 = new(53  / 255f, 53  / 255f, 53  / 255f, 1.0f);
-        Vector4       medium1 = new(64  / 255f, 64  / 255f, 64  / 255f, 1.0f);
-        Vector4       medium2 = new(77  / 255f, 77  / 255f, 77  / 255f, 1.0f);
-        Vector4       light0  = new(89  / 255f, 89  / 255f, 89  / 255f, 1.0f);
-        Vector4       light1  = new(102 / 255f, 102 / 255f, 102 / 255f, 1.0f);
-        Vector4 highlight1 = new(166 / 255f, 98 / 255f, 255 / 255f, 1.0f);
-        
+        Vector4 black      = new(0f, 0f, 0f, 1.0f);
+        Vector4 white      = new(1f, 1f, 1f, 1.0f);
+        Vector4 dark0      = new(15  / 255f, 15  / 255f, 15  / 255f, 1.0f);
+        Vector4 dark1      = new(26  / 255f, 26  / 255f, 26  / 255f, 1.0f);
+        Vector4 dark2      = new(38  / 255f, 38  / 255f, 38  / 255f, 1.0f);
+        Vector4 medium0    = new(53  / 255f, 53  / 255f, 53  / 255f, 1.0f);
+        Vector4 medium1    = new(64  / 255f, 64  / 255f, 64  / 255f, 1.0f);
+        Vector4 medium2    = new(77  / 255f, 77  / 255f, 77  / 255f, 1.0f);
+        Vector4 light0     = new(89  / 255f, 89  / 255f, 89  / 255f, 1.0f);
+        Vector4 light1     = new(102 / 255f, 102 / 255f, 102 / 255f, 1.0f);
+        Vector4 highlight1 = new(166 / 255f, 98  / 255f, 255 / 255f, 1.0f);
+
         // Unused colors.
         // Vector4 light2 = new Vector4(115 / 255f, 115 / 255f, 115 / 255f, 1.0f);
         // Vector4 lighter = new Vector4(128 / 255f, 128 / 255f, 128 / 255f, 1.0f);
@@ -205,8 +205,8 @@ public class ImGuiManager
         style.FramePadding         = new Vector2(10f, 6f);
         style.CellPadding          = new Vector2(6f,  6f);
         style.SeparatorTextPadding = new Vector2(12f, 6f);
-        style.TouchExtraPadding    = new  Vector2(4f, 4f);
-        
+        style.TouchExtraPadding    = new Vector2(4f,  4f);
+
         // Trees.
         style.TreeLinesFlags = ImGuiTreeNodeFlags.DrawLinesNone;
         style.TreeLinesSize  = 1f;
@@ -256,23 +256,24 @@ public class ImGuiManager
         #endregion
 
         #region ImGui fonts
-        GlyphRanges    iconsFontRanges = new(Fonts.Lucide.IconMin, Fonts.Lucide.IconMax, 0);
-        
+
+        GlyphRanges iconsFontRanges = new(PyFonts.Lucide.IconMin, PyFonts.Lucide.IconMax, 0);
+
         // Base font config.
         ImFontConfigPtr fontConfig = ImGui.ImFontConfig();
         fontConfig.SizePixels         = FontSize;
         fontConfig.GlyphExcludeRanges = iconsFontRanges.GetRanges();
-        
+
         // Icons font config.
         ImFontConfigPtr iconsFontConfig = ImGui.ImFontConfig();
         iconsFontConfig.MergeMode        = true;
         iconsFontConfig.GlyphMinAdvanceX = IconsFontSize;
         iconsFontConfig.SizePixels       = IconsFontSize;
         iconsFontConfig.GlyphOffset      = new Vector2(0f, 3f);
-        
+
         // Load fonts.
-        fonts.AddFontFromFileTTF($"{FontsPath}{Fonts.Bfont.FileName}", fontConfig);
-        fonts.AddFontFromFileTTF($"{FontsPath}{Fonts.Lucide.FontIconFileNameLC}", iconsFontConfig);
+        fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Bfont.FileName}",            fontConfig);
+        fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Lucide.FontIconFileNameLC}", iconsFontConfig);
 
         #endregion
     }
@@ -287,7 +288,7 @@ public class ImGuiManager
     public void Terminate()
     {
         _renderer.Dispose();
-        ImGui.DestroyContext();
         ImPlot.DestroyContext();
+        ImGui.DestroyContext();
     }
 }
