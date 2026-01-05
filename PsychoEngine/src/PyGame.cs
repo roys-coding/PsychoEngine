@@ -12,7 +12,7 @@ public class PyGame : Game
     [AllowNull]
     public static PyGame Instance { get; private set; }
 
-    public ImGuiManager ImGuiManager { get; }
+    internal ImGuiManager ImGuiManager { get; }
 
     public PyGame(string windowTitle, int windowWidth, int windowHeight)
     {

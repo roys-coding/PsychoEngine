@@ -8,7 +8,7 @@ using Vector4 = System.Numerics.Vector4;
 
 namespace PsychoEngine;
 
-public class ImGuiManager
+internal class ImGuiManager
 {
     private const    string           FontsPath     = @"Content\Fonts\";
     private const    int              FontSize      = 15;
