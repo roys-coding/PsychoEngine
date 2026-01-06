@@ -70,6 +70,8 @@ public sealed class ImGuiXnaRenderer : IDisposable
                                ScissorTestEnable    = true,
                                SlopeScaleDepthBias  = 0,
                            };
+        
+        _game.Window.ClientSizeChanged += OnWindowOnClientSizeChanged;
     }
 
     public void Dispose()
@@ -87,6 +89,8 @@ public sealed class ImGuiXnaRenderer : IDisposable
                 textureInfo.Texture?.Dispose();
             }
         }
+        
+        _game.Window.ClientSizeChanged -= OnWindowOnClientSizeChanged;
     }
 
     public unsafe void Initialize(GraphicsDevice graphicsDevice)
@@ -114,8 +118,15 @@ public sealed class ImGuiXnaRenderer : IDisposable
         OnWindowSizeChanged();
     }
 
+    private void OnWindowOnClientSizeChanged(object o, EventArgs eventArgs)
+    {
+        OnWindowSizeChanged();
+    }
+
     private void OnWindowSizeChanged()
     {
+        if (_effect is null) return;
+        
         float screenWidth = _graphicsDevice.PresentationParameters.BackBufferWidth;
         float screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
 
