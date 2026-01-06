@@ -1,5 +1,7 @@
 ﻿using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
+using PsychoEngine.Input;
+using PsychoEngine.Utilities;
 
 namespace PsychoEngine.Graphics;
 
@@ -109,14 +111,21 @@ public static class PyGraphics
 
     private static Texture2D   _testTexture;
     private static SpriteBatch _testBatch;
+    private static Vector2     _texturePos;
 
     internal static void Draw()
     {
+        if (PyMouse.IsDragging(MouseButton.Left))
+        {
+            _texturePos   =  PyMouse.Position.ToVector();
+            _texturePos.Y -= 70;
+        }
+        
         Device.Clear(Color.CornflowerBlue);
         
-        _testBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.Default, RasterizerState.CullNone);
+        _testBatch.Begin(SpriteSortMode.BackToFront, BlendState.AlphaBlend, SamplerState.LinearClamp, DepthStencilState.DepthRead, RasterizerState.CullNone);
         
-        _testBatch.Draw(_testTexture, new Vector2(500, 500), new Rectangle(0, 0, 1, 1), Color.White, 45f, Vector2.Zero, 100f, SpriteEffects.None, 0f);
+        _testBatch.Draw(_testTexture, _texturePos, new Rectangle(0, 0, 1, 1), Color.White, MathF.PI * 0.25f, Vector2.Zero, 100f, SpriteEffects.None, 0f);
         
         _testBatch.End();
     }
