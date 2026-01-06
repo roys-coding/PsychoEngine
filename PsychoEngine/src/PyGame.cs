@@ -27,14 +27,15 @@ public class PyGame : Game
         ImGuiManager          =  new ImGuiManager(this);
         ImGuiManager.OnLayout += ImGuiOnLayout;
         
-        // Initialize graphics.
+        // Initialize graphics & window.
         PyGraphics.Initialize();
+        PyWindow.Initialize();
+        PyWindow.AddCustomSupportedResolution(690, 420);
         
-        PyGraphics.Window.Title = windowTitle;
-        PyGraphics.Window.AllowUserResizing = true;
-        
-        PyGraphics.Window.SetSize(windowWidth, windowHeight);
         PyGraphics.SetVerticalSync(false);
+
+        PyWindow.Title = windowTitle;
+        PyWindow.SetResolution(windowWidth, windowHeight);
     }
 
     #region ImGui
