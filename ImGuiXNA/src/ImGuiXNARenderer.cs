@@ -70,8 +70,6 @@ public sealed class ImGuiXnaRenderer : IDisposable
                                ScissorTestEnable    = true,
                                SlopeScaleDepthBias  = 0,
                            };
-        
-        _game.Window.ClientSizeChanged += OnWindowOnClientSizeChanged;
     }
 
     public void Dispose()
@@ -89,8 +87,6 @@ public sealed class ImGuiXnaRenderer : IDisposable
                 textureInfo.Texture?.Dispose();
             }
         }
-        
-        _game.Window.ClientSizeChanged -= OnWindowOnClientSizeChanged;
     }
 
     public unsafe void Initialize(GraphicsDevice graphicsDevice)
@@ -109,33 +105,8 @@ public sealed class ImGuiXnaRenderer : IDisposable
         // Create basic effect used to render ImGui.
         _effect = new BasicEffect(_graphicsDevice)
                   {
-                      World              = Matrix.Identity,
-                      View               = Matrix.Identity,
-                      TextureEnabled     = true,
-                      VertexColorEnabled = true,
+                      World = Matrix.Identity, View = Matrix.Identity, TextureEnabled = true, VertexColorEnabled = true,
                   };
-        
-        OnWindowSizeChanged();
-    }
-
-    private void OnWindowOnClientSizeChanged(object o, EventArgs eventArgs)
-    {
-        OnWindowSizeChanged();
-    }
-
-    private void OnWindowSizeChanged()
-    {
-        if (_effect is null) return;
-        
-        float screenWidth = _graphicsDevice.PresentationParameters.BackBufferWidth;
-        float screenHeight = _graphicsDevice.PresentationParameters.BackBufferHeight;
-
-        _effect.Projection = Matrix.CreateOrthographicOffCenter(0.0f,
-                                                                screenWidth,
-                                                                screenHeight,
-                                                                0.0f,
-                                                                -1.0f,
-                                                                1.0f);
     }
 
     #endregion
@@ -144,19 +115,6 @@ public sealed class ImGuiXnaRenderer : IDisposable
 
     public void Render()
     {
-        ImGuiIOPtr io = ImGui.GetIO();
-
-        // Check if the window size has changed.
-        float screenWidth       = _graphicsDevice.PresentationParameters.BackBufferWidth;
-        float screenHeight      = _graphicsDevice.PresentationParameters.BackBufferHeight;
-
-        // ReSharper disable CompareOfFloatsByEqualityOperator
-        if (screenWidth != io.DisplaySize.X || screenHeight != io.DisplaySize.Y)
-        {
-            OnWindowSizeChanged();
-        }
-        // ReSharper restore CompareOfFloatsByEqualityOperator
-        
         ImGui.Render();
 
         ImDrawDataPtr drawData = ImGui.GetDrawData();
@@ -370,6 +328,16 @@ public sealed class ImGuiXnaRenderer : IDisposable
                                                 0,
                                                 _graphicsDevice.PresentationParameters.BackBufferWidth,
                                                 _graphicsDevice.PresentationParameters.BackBufferHeight);
+
+        ImGuiIOPtr io = ImGui.GetIO();
+
+        // Set up effect projection.
+        _effect.Projection = Matrix.CreateOrthographicOffCenter(0.0f,
+                                                                io.DisplaySize.X,
+                                                                io.DisplaySize.Y,
+                                                                0.0f,
+                                                                -1.0f,
+                                                                1.0f);
 
         UpdateBuffers(drawData);
         RenderCommandLists(drawData);
