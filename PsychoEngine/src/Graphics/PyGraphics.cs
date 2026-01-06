@@ -1,8 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using Hexa.NET.ImGui;
+﻿using Hexa.NET.ImGui;
 using Microsoft.Xna.Framework.Graphics;
-using PsychoEngine.Utilities;
-using Vector2 = System.Numerics.Vector2;
 
 namespace PsychoEngine.Graphics;
 
@@ -12,7 +9,6 @@ public static class PyGraphics
     // TODO: Rendering.
     // TODO: Persistent resolutions.
     // TODO: Rendering resolution.
-    // TODO: ImGui debug window.
     
     public static class Window
     {
@@ -127,8 +123,8 @@ public static class PyGraphics
 
         private static void SetModeBorderless()
         {
-            DeviceManager.IsFullScreen = true;
-            GameWindow.IsBorderlessEXT  = false;
+            DeviceManager.IsFullScreen = false;
+            GameWindow.IsBorderlessEXT  = true;
             
             ApplyChanges();
         }
@@ -208,10 +204,13 @@ public static class PyGraphics
 
     #region ImGui fields
 
-    private static int[]  _screenSize =
+    private static readonly int[] ScreenSize =
     [
         0, 0,
     ];
+
+    private static readonly string[] WindowModeNames = Enum.GetNames<WindowMode>();
+    
     private static bool _editingScreenSize;
 
     #endregion
@@ -231,58 +230,79 @@ public static class PyGraphics
         string windowTitle             = Window.Title;
         bool   titleChanged            = ImGui.InputText("Title", ref windowTitle, 255);
         if (titleChanged) Window.Title = windowTitle;
+        
+        ImGui.Spacing();
 
-        bool mouseVisible                              = Window.IsMouseVisible;
-        bool mouseVisibleChanged                       = ImGui.Checkbox("Is Mouse Visible", ref mouseVisible);
-        if (mouseVisibleChanged) Window.IsMouseVisible = mouseVisible;
-
-        bool allowResizing                                 = Window.AllowUserResizing;
-        bool allowResizingChanged                          = ImGui.Checkbox("Allow Resizing", ref allowResizing);
-        if (allowResizingChanged) Window.AllowUserResizing = allowResizing;
-
-        if (!_editingScreenSize)
+        if (ImGui.CollapsingHeader("Size & mode"))
         {
-            _screenSize[0] = Window.Width;
-            _screenSize[1] = Window.Height;
-        }
+            int windowMode = (int)Window.Mode;
+            bool windowModeChanged = ImGui.Combo("Mode", ref windowMode, WindowModeNames, WindowModeNames.Length);
+            if (windowModeChanged) Window.SetMode((WindowMode)windowMode);
+            
+            ImGui.Spacing();
+            ImGui.Separator();
+            ImGui.Spacing();
+            
+            if (!_editingScreenSize)
+            {
+                ScreenSize[0] = Window.Width;
+                ScreenSize[1] = Window.Height;
+            }
 
-        bool screenSizeChanged = ImGui.DragInt2("Size", ref _screenSize[0], 1, ImGuiSliderFlags.AlwaysClamp);
-        if (screenSizeChanged) _editingScreenSize = true;
+            bool screenSizeChanged =
+                ImGui.DragInt2("##window_size", ref ScreenSize[0], 1, ImGuiSliderFlags.AlwaysClamp);
 
-        if (!_editingScreenSize)
-        {
-            ImGui.BeginDisabled();
+            if (screenSizeChanged) _editingScreenSize = true;
+
+            if (!_editingScreenSize)
+            {
+                ImGui.BeginDisabled();
+            }
+
+            bool applySizePressed = ImGui.Button("Apply");
+            ImGui.SameLine();
+            bool resetSizePressed = ImGui.Button("Cancel");
+
+            if (!_editingScreenSize)
+            {
+                ImGui.EndDisabled();
+            }
+
+            if (applySizePressed)
+            {
+                Window.SetSize(ScreenSize[0], ScreenSize[1]);
+                _editingScreenSize = false;
+            }
+
+            if (resetSizePressed)
+            {
+                _editingScreenSize = false;
+            }
         }
         
-        bool applySizePressed = ImGui.Button("Apply");
-        ImGui.SameLine();
-        bool resetSizePressed = ImGui.Button("Cancel");
-        
-        if (!_editingScreenSize)
+        if (ImGui.CollapsingHeader("Settings##window"))
         {
-            ImGui.EndDisabled();
-        }
+            bool mouseVisible                              = Window.IsMouseVisible;
+            bool mouseVisibleChanged                       = ImGui.Checkbox("Is Mouse Visible", ref mouseVisible);
+            if (mouseVisibleChanged) Window.IsMouseVisible = mouseVisible;
 
-        if (applySizePressed)
-        {
-            Window.SetSize(_screenSize[0], _screenSize[1]);
-            _editingScreenSize = false;
-        }
-
-        if (resetSizePressed)
-        {
-            _editingScreenSize = false;
+            bool allowResizing                                 = Window.AllowUserResizing;
+            bool allowResizingChanged                          = ImGui.Checkbox("Allow Resizing", ref allowResizing);
+            if (allowResizingChanged) Window.AllowUserResizing = allowResizing;
         }
 
         ImGui.SeparatorText("Graphics");
-        
-        bool vsync        = VerticalSync;
-        bool vsyncChanged = ImGui.Checkbox("Vertical Sync", ref vsync);
-        if (vsyncChanged) SetVerticalSync(vsync);
-        
-        bool fixedStep        = FixedTimeStep;
-        bool fixedStepChanged = ImGui.Checkbox("FixedTimeStep", ref fixedStep);
-        if (fixedStepChanged) SetFixedTimeStep(fixedStep);
+
+        if (ImGui.CollapsingHeader("Settings##graphics"))
+        {
+            bool vsync        = VerticalSync;
+            bool vsyncChanged = ImGui.Checkbox("Vertical Sync", ref vsync);
+            if (vsyncChanged) SetVerticalSync(vsync);
+
+            bool fixedStep        = FixedTimeStep;
+            bool fixedStepChanged = ImGui.Checkbox("FixedTimeStep", ref fixedStep);
+            if (fixedStepChanged) SetFixedTimeStep(fixedStep);
+        }
         
         ImGui.End();
     }
@@ -312,6 +332,10 @@ public static class PyGraphics
 
     private static void OnClientSizeChanged(object? sender, EventArgs e)
     {
+        // Update preferred back buffer size to match new window size.
+        // Otherwise, when changing other settings (such as vsync, multisampling, etc.),
+        // the window resets to its previous size.
+        
         DeviceManager.PreferredBackBufferWidth = GameWindow.ClientBounds.Width;
         DeviceManager.PreferredBackBufferHeight = GameWindow.ClientBounds.Height;
         
