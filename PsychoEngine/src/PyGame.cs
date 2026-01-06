@@ -29,7 +29,10 @@ public class PyGame : Game
         
         // Initialize graphics.
         PyGraphics.Initialize();
+        
         PyGraphics.Window.Title = windowTitle;
+        PyGraphics.Window.AllowUserResizing = true;
+        
         PyGraphics.Window.SetSize(windowWidth, windowHeight);
         PyGraphics.SetVerticalSync(false);
     }

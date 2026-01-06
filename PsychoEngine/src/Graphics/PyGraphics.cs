@@ -206,6 +206,16 @@ public static class PyGraphics
 
     #region ImGui
 
+    #region ImGui fields
+
+    private static int[]  _screenSize =
+    [
+        0, 0,
+    ];
+    private static bool _editingScreenSize;
+
+    #endregion
+
     private static unsafe void ImGuiOnLayout(object? sender, EventArgs e)
     {
         bool windowOpen = ImGui.Begin($"{PyFonts.Lucide.Monitor} Graphics");
@@ -230,15 +240,38 @@ public static class PyGraphics
         bool allowResizingChanged                          = ImGui.Checkbox("Allow Resizing", ref allowResizing);
         if (allowResizingChanged) Window.AllowUserResizing = allowResizing;
 
-        int[] windowSize =
-        [
-            Window.Width, Window.Height,
-        ];
-
-        fixed (int* windowSizePtr = windowSize)
+        if (!_editingScreenSize)
         {
-            bool    sizeChanged = ImGui.DragInt2("Size", windowSizePtr, 1, ImGuiSliderFlags.AlwaysClamp);
-            if (sizeChanged) Window.SetSize(windowSize[0], windowSize[1]);
+            _screenSize[0] = Window.Width;
+            _screenSize[1] = Window.Height;
+        }
+
+        bool screenSizeChanged = ImGui.DragInt2("Size", ref _screenSize[0], 1, ImGuiSliderFlags.AlwaysClamp);
+        if (screenSizeChanged) _editingScreenSize = true;
+
+        if (!_editingScreenSize)
+        {
+            ImGui.BeginDisabled();
+        }
+        
+        bool applySizePressed = ImGui.Button("Apply");
+        ImGui.SameLine();
+        bool resetSizePressed = ImGui.Button("Cancel");
+        
+        if (!_editingScreenSize)
+        {
+            ImGui.EndDisabled();
+        }
+
+        if (applySizePressed)
+        {
+            Window.SetSize(_screenSize[0], _screenSize[1]);
+            _editingScreenSize = false;
+        }
+
+        if (resetSizePressed)
+        {
+            _editingScreenSize = false;
         }
 
         ImGui.SeparatorText("Graphics");
@@ -279,6 +312,9 @@ public static class PyGraphics
 
     private static void OnClientSizeChanged(object? sender, EventArgs e)
     {
+        DeviceManager.PreferredBackBufferWidth = GameWindow.ClientBounds.Width;
+        DeviceManager.PreferredBackBufferHeight = GameWindow.ClientBounds.Height;
+        
         ApplyChanges();
     }
 
