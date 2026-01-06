@@ -272,7 +272,7 @@ internal class ImGuiManager
         iconsFontConfig.GlyphOffset      = new Vector2(0f, 3f);
 
         // Load fonts.
-        fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Bfont.FileName}",            fontConfig);
+        fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Inter.FileNameRegular}",            fontConfig);
         fonts.AddFontFromFileTTF($"{FontsPath}{PyFonts.Lucide.FontIconFileNameLC}", iconsFontConfig);
 
         #endregion
