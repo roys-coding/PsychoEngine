@@ -33,18 +33,6 @@ public static class PyKeyboard
     // Time stamps.
     public static TimeSpan LastInputTime { get; private set; }
 
-    // Key states.
-    public static Keys[] AllKeysDown
-    {
-        get
-        {
-            // Cache current frame's pressed keys.
-            _allKeysDown ??= _currentState.GetPressedKeys();
-
-            return _allKeysDown;
-        }
-    }
-
     // Modifier keys.
     public static bool ModShift   => IsKeyDown(Keys.LeftShift)   || IsKeyDown(Keys.RightShift);
     public static bool ModControl => IsKeyDown(Keys.LeftControl) || IsKeyDown(Keys.RightControl);
@@ -164,7 +152,7 @@ public static class PyKeyboard
 
             if (ImGui.CollapsingHeader("All keys down"))
             {
-                string keys = string.Join(", ", AllKeysDown);
+                string keys = string.Join(", ", GetAllKeysDown);
                 ImGui.Text(keys);
                 ImGui.Separator();
             }
@@ -261,6 +249,14 @@ public static class PyKeyboard
     #endregion
 
     #region Public interface
+    
+    public static Keys[] GetAllKeysDown()
+    {
+        // Cache current frame's pressed keys.
+        _allKeysDown ??= _currentState.GetPressedKeys();
+
+        return _allKeysDown;
+    }
 
     public static InputStates GetKeyState(Keys key)
     {
