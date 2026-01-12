@@ -32,14 +32,14 @@ public static partial class PyGraphics
             bool expandChanged = ImGui.Combo("Resizing", ref expandMode, ExpandNames, ExpandNames.Length);
             if (expandChanged)
             {
-                SetExpandMode((CanvasResizingPolicy)expandMode);
+                SetExpandPolicy((CanvasResizingPolicy)expandMode);
             }
 
             int  scalingMode    = (int)CanvasScalingPolicy;
             bool scalingChanged = ImGui.Combo("Scaling", ref scalingMode, ScalingNames, ScalingNames.Length);
             if (scalingChanged)
             {
-                SetScalingMode((CanvasScalingPolicy)scalingMode);
+                SetScalingPolicy((CanvasScalingPolicy)scalingMode);
             }
 
             // ImGui.Spacing();

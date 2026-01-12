@@ -105,25 +105,25 @@ public static partial class PyGraphics
         }
     }
 
-    public static void SetScalingMode(CanvasScalingPolicy mode)
+    public static void SetScalingPolicy(CanvasScalingPolicy policy)
     {
-        if (mode == CanvasScalingPolicy)
+        if (policy == CanvasScalingPolicy)
         {
             return;
         }
 
-        CanvasScalingPolicy = mode;
+        CanvasScalingPolicy = policy;
         CalculateCanvasBounds();
     }
 
-    public static void SetExpandMode(CanvasResizingPolicy mode)
+    public static void SetExpandPolicy(CanvasResizingPolicy policy)
     {
-        if (mode == CanvasResizingPolicy)
+        if (policy == CanvasResizingPolicy)
         {
             return;
         }
 
-        CanvasResizingPolicy = mode;
+        CanvasResizingPolicy = policy;
         CreateCanvas();
         CalculateCanvasBounds();
     }
@@ -326,7 +326,7 @@ public static partial class PyGraphics
                     case CanvasScalingPolicy.Custom:
                         if (_customScalingMethod is null)
                         {
-                            throw new NullReferenceException("A custom scaling method has not been defined.");
+                            throw new NullReferenceException($"No custom scaling method is defined. Use {nameof(SetCustomScalingMethod)} to define one.");
                         }
 
                         bounds = _customScalingMethod(_currentResolution.Width,
