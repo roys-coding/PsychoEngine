@@ -8,6 +8,7 @@ public struct GraphicsResolution : IEquatable<GraphicsResolution>, IComparable<G
     public int Height { get; set; }
 
     public float AspectRatio => (float)Width / Height;
+    public int Area => Width * Height;
 
     public GraphicsResolution(int width, int height)
     {
@@ -53,6 +54,7 @@ public struct GraphicsResolution : IEquatable<GraphicsResolution>, IComparable<G
 
     public int CompareTo(GraphicsResolution other)
     {
+        // Wider resolutions take priority.
         return other.Width == Width && other.Height == Height ? 0 :
                Width > other.Width                            ? 1 :
                Height > other.Height                          ? 1 : -1;
