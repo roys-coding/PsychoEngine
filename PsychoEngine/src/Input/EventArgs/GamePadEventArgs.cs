@@ -14,8 +14,7 @@ public class GamePadButtonEventArgs : GamePadEventArgs
 {
     public GamePadButton Button { get; }
 
-    public GamePadButtonEventArgs(GamePadButton button, PlayerIndex playerIndex)
-        : base(playerIndex)
+    public GamePadButtonEventArgs(GamePadButton button, PlayerIndex playerIndex) : base(playerIndex)
     {
         Button = button;
     }
@@ -32,8 +31,7 @@ public class GamePadTriggerEventArgs : GamePadEventArgs
         float          triggerValue,
         float          triggerDelta,
         PlayerIndex    playerIndex
-    )
-        : base(playerIndex)
+    ) : base(playerIndex)
     {
         Trigger      = trigger;
         TriggerValue = triggerValue;
@@ -52,8 +50,7 @@ public class GamePadThumbstickEventArgs : GamePadEventArgs
         Vector2           thumbstickValue,
         Vector2           thumbstickDelta,
         PlayerIndex       playerIndex
-    )
-        : base(playerIndex)
+    ) : base(playerIndex)
     {
         Thumbstick      = thumbstick;
         ThumbstickValue = thumbstickValue;

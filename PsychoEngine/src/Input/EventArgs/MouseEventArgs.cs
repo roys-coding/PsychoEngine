@@ -16,8 +16,8 @@ public class MouseButtonEventArgs : MouseEventArgs
 {
     public MouseButton Button { get; }
 
-    public MouseButtonEventArgs(MouseButton button, Point position, ModifierKeys modifierKeys)
-        : base(position, modifierKeys)
+    public MouseButtonEventArgs(MouseButton button, Point position, ModifierKeys modifierKeys) :
+        base(position, modifierKeys)
     {
         Button = button;
     }
@@ -67,8 +67,8 @@ public class MouseMultiClickEventArgs : MouseEventArgs
     public MouseButton Button     { get; }
     public int         ClickCount { get; }
 
-    public MouseMultiClickEventArgs(MouseButton button, int clickCount, Point position, ModifierKeys modifierKeys)
-        : base(position, modifierKeys)
+    public MouseMultiClickEventArgs(MouseButton button, int clickCount, Point position, ModifierKeys modifierKeys) :
+        base(position, modifierKeys)
     {
         Button     = button;
         ClickCount = clickCount;
