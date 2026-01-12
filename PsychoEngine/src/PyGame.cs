@@ -30,12 +30,13 @@ public class PyGame : Game
         // Initialize graphics & window.
         PyGraphics.Initialize();
         PyWindow.Initialize();
-        PyWindow.AddCustomSupportedResolution(690, 420);
         
         PyGraphics.SetVerticalSync(false);
 
+        PyWindow.SetSize(windowWidth, windowHeight);
         PyWindow.Title = windowTitle;
-        PyWindow.SetResolution(windowWidth, windowHeight);
+        PyWindow.IsMouseVisible = false;
+        PyWindow.IsResizable    = true;
     }
 
     #region ImGui

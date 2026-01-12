@@ -1,15 +1,16 @@
-﻿using Hexa.NET.ImGui;
-using Microsoft.Xna.Framework.Graphics;
+﻿namespace PsychoEngine.Graphics;
 
-namespace PsychoEngine.Graphics;
-
-public static class PyWindow
+public static partial class PyWindow
 {
     // TODO: Persistent resolutions.
 
-    #region Fields
+    #region Events
 
-    private static readonly SortedSet<WindowResolution> CustomResolutions = new();
+    public static event EventHandler<WindowEventArgs>? OnSizeChanged;
+
+    #endregion
+
+    #region Fields
 
     private static bool _isInitialized;
 
@@ -17,7 +18,7 @@ public static class PyWindow
 
     #region Properties
 
-    public static GameWindow GameWindow => PyGame.Instance.Window;
+    internal static GameWindow GameWindow => PyGame.Instance.Window;
 
     // General options.
     public static string Title
@@ -40,7 +41,11 @@ public static class PyWindow
         set => PyGame.Instance.IsMouseVisible = value;
     }
 
-    public static WindowSizingPolicy SizingPolicy { get; private set; }
+    public static bool IsResizable
+    {
+        get => GameWindow.AllowUserResizing;
+        set => GameWindow.AllowUserResizing = value;
+    }
 
     // Resolution & window mode.
     public static WindowMode Mode
@@ -56,7 +61,11 @@ public static class PyWindow
         }
     }
 
-    public static WindowResolution ActiveResolution =>
+    public static int   Width       => PyGraphics.Device.PresentationParameters.BackBufferWidth;
+    public static int   Height      => PyGraphics.Device.PresentationParameters.BackBufferHeight;
+    public static float AspectRatio => (float)Size.X / Size.Y;
+
+    public static Point Size =>
         new(PyGraphics.Device.PresentationParameters.BackBufferWidth,
             PyGraphics.Device.PresentationParameters.BackBufferHeight);
 
@@ -64,80 +73,57 @@ public static class PyWindow
 
     #region Public interface
 
-    public static void SetSizingPolicy(WindowSizingPolicy sizingPolicy)
-    {
-        switch (sizingPolicy)
-        {
-            case WindowSizingPolicy.AllowUserResizing:
-                GameWindow.AllowUserResizing = true;
-                break;
-
-            case WindowSizingPolicy.EnforceMonitorSupportedResolutions:
-            case WindowSizingPolicy.EnforceCustomResolutions:
-                GameWindow.AllowUserResizing = false;
-                break;
-
-            default: throw new NotSupportedException($"Window sizing policy '{sizingPolicy}' not supported.");
-        }
-
-        SizingPolicy = sizingPolicy;
-
-        if (PyGraphics.IsDeviceCreated)
-        {
-            SetResolution(ActiveResolution.Width, ActiveResolution.Height);
-        }
-    }
-
-    public static WindowResolution[] GetScreenSupportedResolutionsDescending()
+    public static GraphicsResolution[] GetScreenSupportedResolutionsDescending()
     {
         return PyGraphics.CurrentAdapter.SupportedDisplayModes.Select(displayMode =>
-                                                                          new WindowResolution(displayMode.Width,
+                                                                          new GraphicsResolution(displayMode.Width,
                                                                               displayMode.Height))
                          .OrderDescending()
                          .ToArray();
     }
 
-    public static bool AddCustomSupportedResolution(int width, int height)
-    {
-        return CustomResolutions.Add(new WindowResolution(width, height));
-    }
-
-    public static void SetResolution(int width, int height)
+    public static void SetSize(int width, int height)
     {
         if (width <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(width), $"{width} must be greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(width), "Window width must be greater than zero.");
         }
 
         if (height <= 0)
         {
-            throw new ArgumentOutOfRangeException(nameof(height),
-                                                  $"{height} must be greater than zero.");
+            throw new ArgumentOutOfRangeException(nameof(height), "Window height must be greater than zero.");
         }
 
         PyGraphics.DeviceManager.PreferredBackBufferWidth  = width;
         PyGraphics.DeviceManager.PreferredBackBufferHeight = height;
 
         PyGraphics.ApplyChanges();
+
+        OnSizeChanged?.Invoke(null, new WindowEventArgs(width, height));
     }
 
     // Resolution & window mode.
     public static void SetMode(WindowMode mode)
     {
-        WindowResolution? appliedResolution = null;
-        
+        GraphicsResolution? appliedResolution = null;
+
         switch (mode)
         {
             case WindowMode.Windowed:
                 PyGraphics.DeviceManager.IsFullScreen = false;
                 GameWindow.IsBorderlessEXT            = false;
-                
+
+                break;
+
+            case WindowMode.Borderless:
+                PyGraphics.DeviceManager.IsFullScreen = false;
+                GameWindow.IsBorderlessEXT            = true;
                 break;
 
             case WindowMode.Fullscreen:
                 PyGraphics.DeviceManager.IsFullScreen = true;
-                GameWindow.IsBorderlessEXT = false;
-                
+                GameWindow.IsBorderlessEXT            = false;
+
                 break;
 
             default: throw new NotSupportedException($"Window mode '{mode}' not supported.");
@@ -148,7 +134,7 @@ public static class PyWindow
             PyGraphics.DeviceManager.PreferredBackBufferWidth  = appliedResolution.Value.Width;
             PyGraphics.DeviceManager.PreferredBackBufferHeight = appliedResolution.Value.Height;
         }
-        
+
         PyGraphics.ApplyChanges();
     }
 
@@ -163,134 +149,30 @@ public static class PyWindow
             throw new InvalidOperationException($"{nameof(PyWindow)} has already been initialized.");
         }
 
-        // Default values.
+        _isInitialized = true;
+
+        // Default settings.
         Title          = "PsychoEngine Game";
-        IsMouseVisible = false;
-        SetSizingPolicy(WindowSizingPolicy.AllowUserResizing);
-        SetResolution(800, 600);
+        IsMouseVisible = true;
+        IsResizable    = false;
+        SetSize(800, 600);
         SetMode(WindowMode.Windowed);
 
+        // Event subscriptions.
         PyGraphics.DeviceManager.PreparingDeviceSettings += DeviceManagerOnPreparingDeviceSettings;
         GameWindow.ClientSizeChanged                     += OnClientSizeChanged;
-
-        _isInitialized = true;
 
         #region ImGui
 
         PyGame.Instance.ImGuiManager.OnLayout += ImGuiOnLayout;
+        OnSizeChanged                         += OnOnSizeChanged;
 
         #endregion
     }
 
-    #region ImGui
-
-    #region ImGui fields
-
-    private static readonly int[] ScreenSize =
-    [
-        0, 0,
-    ];
-
-    private static readonly string[] WindowModeNames   = Enum.GetNames<WindowMode>();
-    private static readonly string[] SizingPolicyNames = Enum.GetNames<WindowSizingPolicy>();
-
-    private static bool _editingScreenSize;
-
-    #endregion
-
-    private static void ImGuiOnLayout(object? sender, EventArgs e)
-    {
-        bool windowOpen = ImGui.Begin($"{PyFonts.Lucide.AppWindowMac} Window");
-
-        if (!windowOpen)
-        {
-            ImGui.End();
-            return;
-        }
-
-        string windowTitle      = Title;
-        bool   titleChanged     = ImGui.InputText("Title", ref windowTitle, 255);
-        if (titleChanged) Title = windowTitle;
-
-        ImGui.Spacing();
-
-        if (ImGui.CollapsingHeader("Size & mode"))
-        {
-            int  windowMode        = (int)Mode;
-            bool windowModeChanged = ImGui.Combo("Mode", ref windowMode, WindowModeNames, WindowModeNames.Length);
-            if (windowModeChanged) SetMode((WindowMode)windowMode);
-
-            int sizingPolicy = (int)SizingPolicy;
-
-            bool sizingPolicyChanged =
-                ImGui.Combo("Sizing Policy", ref sizingPolicy, SizingPolicyNames, SizingPolicyNames.Length);
-
-            if (sizingPolicyChanged) SetSizingPolicy((WindowSizingPolicy)sizingPolicy);
-
-            ImGui.Spacing();
-            ImGui.Separator();
-            ImGui.Spacing();
-
-            if (!_editingScreenSize)
-            {
-                ScreenSize[0] = ActiveResolution.Width;
-                ScreenSize[1] = ActiveResolution.Height;
-            }
-
-            bool screenSizeChanged =
-                ImGui.DragInt2("##window_size", ref ScreenSize[0], 1, ImGuiSliderFlags.AlwaysClamp);
-
-            if (screenSizeChanged) _editingScreenSize = true;
-
-            if (!_editingScreenSize)
-            {
-                ImGui.BeginDisabled();
-            }
-
-            bool applySizePressed = ImGui.Button("Apply");
-            ImGui.SameLine();
-            bool resetSizePressed = ImGui.Button("Cancel");
-
-            if (!_editingScreenSize)
-            {
-                ImGui.EndDisabled();
-            }
-
-            if (applySizePressed)
-            {
-                SetResolution(ScreenSize[0], ScreenSize[1]);
-                _editingScreenSize = false;
-            }
-
-            if (resetSizePressed)
-            {
-                _editingScreenSize = false;
-            }
-        }
-
-        if (ImGui.CollapsingHeader("Settings##window"))
-        {
-            bool mouseVisible                       = IsMouseVisible;
-            bool mouseVisibleChanged                = ImGui.Checkbox("Is Mouse Visible", ref mouseVisible);
-            if (mouseVisibleChanged) IsMouseVisible = mouseVisible;
-        }
-
-        if (ImGui.CollapsingHeader("Internal"))
-        {
-            ImGui.Text($"Active resolution: {ActiveResolution}");
-            ImGui.Text($"Preferred resolution: ({PyGraphics.DeviceManager.PreferredBackBufferWidth} x {PyGraphics.DeviceManager.PreferredBackBufferHeight})");
-        }
-
-        ImGui.End();
-    }
-
-    #endregion
-
     private static void DeviceManagerOnPreparingDeviceSettings(object? sender, PreparingDeviceSettingsEventArgs e)
     {
-        PresentationParameters presentationParameters = e.GraphicsDeviceInformation.PresentationParameters;
-        
-        EnforceSizingPolicy(presentationParameters);
+        // PresentationParameters presentationParameters = e.GraphicsDeviceInformation.PresentationParameters;
     }
 
     private static void OnClientSizeChanged(object? sender, EventArgs e)
@@ -298,78 +180,10 @@ public static class PyWindow
         // Update preferred back buffer size to match new window size.
         // Otherwise, when changing other settings (such as vsync, multisampling, etc.),
         // the window resets to its previous size.
-
         PyGraphics.DeviceManager.PreferredBackBufferWidth  = GameWindow.ClientBounds.Width;
         PyGraphics.DeviceManager.PreferredBackBufferHeight = GameWindow.ClientBounds.Height;
-    }
 
-    private static void EnforceSizingPolicy(PresentationParameters presentationParameters)
-    {
-        if (presentationParameters.IsFullScreen || GameWindow.IsBorderlessEXT) return;
-
-        WindowResolution targetResolution =
-            new(presentationParameters.BackBufferWidth, presentationParameters.BackBufferHeight);
-
-        // TODO: Enforce sizing policy in borderless & fullscreen modes.
-
-        switch (SizingPolicy)
-        {
-            case WindowSizingPolicy.AllowUserResizing: break;
-
-            case WindowSizingPolicy.EnforceMonitorSupportedResolutions:
-                WindowResolution[] supportedResolutions = GetScreenSupportedResolutionsDescending();
-
-                if (supportedResolutions.Contains(targetResolution)) break;
-
-                WindowResolution resolvedResolution = default;
-                bool             resolutionResolved = false;
-
-                foreach (WindowResolution resolution in supportedResolutions)
-                {
-                    if (resolution > targetResolution) continue;
-
-                    resolvedResolution = resolution;
-                    resolutionResolved = true;
-                    break;
-                }
-
-                if (!resolutionResolved)
-                {
-                    resolvedResolution = supportedResolutions.Last();
-                }
-
-                presentationParameters.BackBufferWidth  = resolvedResolution.Width;
-                presentationParameters.BackBufferHeight = resolvedResolution.Height;
-
-                break;
-
-            case WindowSizingPolicy.EnforceCustomResolutions:
-                if (CustomResolutions.Contains(targetResolution)) break;
-
-                WindowResolution resolvedCustomResolution = default;
-                bool             customResolutionResolved = false;
-
-                foreach (WindowResolution resolution in CustomResolutions)
-                {
-                    if (resolution > targetResolution) continue;
-
-                    resolvedCustomResolution = resolution;
-                    customResolutionResolved = true;
-                    break;
-                }
-
-                if (!customResolutionResolved)
-                {
-                    resolvedCustomResolution = CustomResolutions.First();
-                }
-
-                presentationParameters.BackBufferWidth  = resolvedCustomResolution.Width;
-                presentationParameters.BackBufferHeight = resolvedCustomResolution.Height;
-
-                break;
-
-            default: throw new NotSupportedException($"Sizing policy '{SizingPolicy}' not supported.");
-        }
+        OnSizeChanged?.Invoke(null, new WindowEventArgs(Width, Height));
     }
 
     #endregion
