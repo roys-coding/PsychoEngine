@@ -1,12 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
+using PsychoEngine.Graphics;
 using PsychoEngine.Input;
 
 namespace PsychoEngine;
 
 public partial class PyGame : Game
 {
-    private readonly GraphicsDeviceManager _deviceManager;
-
     [AllowNull] public static PyGame Instance { get; private set; }
 
     internal ImGuiManager ImGuiManager { get; }
@@ -20,23 +19,24 @@ public partial class PyGame : Game
 
         Instance = this;
 
-        _deviceManager                                = new GraphicsDeviceManager(this);
-        _deviceManager.PreferredBackBufferWidth       = windowWidth;
-        _deviceManager.PreferredBackBufferHeight      = windowHeight;
-        _deviceManager.SynchronizeWithVerticalRetrace = false;
-        IsMouseVisible                                = false;
-        Window.AllowUserResizing                      = true;
-
-        Window.Title = windowTitle;
-
         ImGuiManager = new ImGuiManager(this);
+
+        PyGraphics.Initialize();
+        PyWindow.Initialize();
+        
+        PyWindow.Title = windowTitle;
+        PyWindow.SetSize(windowWidth, windowHeight);
+        PyWindow.IsMouseVisible = false;
+        PyWindow.IsResizable    = true;
+        
+        PyGraphics.SetVerticalSync(false);
 
         InitializeImGui();
     }
 
     protected override void Initialize()
     {
-        ImGuiManager.Initialize(_deviceManager.GraphicsDevice);
+        ImGuiManager.Initialize(PyGraphics.Device);
         base.Initialize();
     }
 
@@ -54,8 +54,8 @@ public partial class PyGame : Game
     protected override void Draw(GameTime gameTime)
     {
         PyGameTimes.Draw = gameTime;
-
-        GraphicsDevice.Clear(Color.CornflowerBlue);
+        
+        PyGraphics.Draw();
 
         ImGuiManager.Draw(gameTime);
 

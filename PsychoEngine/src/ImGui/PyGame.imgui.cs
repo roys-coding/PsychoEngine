@@ -85,15 +85,6 @@ public partial class PyGame
             {
                 IsFixedTimeStep = isFixed;
             }
-
-            bool vsync        = _deviceManager.SynchronizeWithVerticalRetrace;
-            bool vsyncChanged = ImGui.Checkbox("VSync", ref vsync);
-
-            if (vsyncChanged)
-            {
-                _deviceManager.SynchronizeWithVerticalRetrace = vsync;
-                _deviceManager.ApplyChanges();
-            }
         }
 
         ImGui.End();
