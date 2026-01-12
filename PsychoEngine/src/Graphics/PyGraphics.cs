@@ -62,7 +62,7 @@ public static partial class PyGraphics
     public static CanvasResizingPolicy CanvasResizingPolicy { get; private set; }
     public static CanvasScalingPolicy  CanvasScalingPolicy  { get; private set; }
 
-    private static GraphicsResolution ActiveResolution => new(_canvas.Width, _canvas.Height);
+    private static GraphicsResolution CanvasResolution => new(_canvas.Width, _canvas.Height);
 
     public static bool VerticalSync  => DeviceManager.SynchronizeWithVerticalRetrace;
     public static bool FixedTimeStep => PyGame.Instance.IsFixedTimeStep;
@@ -181,7 +181,7 @@ public static partial class PyGraphics
     {
         if (PyMouse.IsDragging(MouseButton.Left))
         {
-            _texturePos   =  PyMouse.Position.ToVector() * (ActiveResolution.ToVector2() / PyWindow.Size.ToVector());
+            _texturePos   =  PyMouse.Position.ToVector() * (CanvasResolution.ToVector2() / PyWindow.Size.ToVector());
             _texturePos.Y -= 35;
         }
 
@@ -208,7 +208,7 @@ public static partial class PyGraphics
                         SpriteEffects.None,
                         0f);
 
-        DrawRect(0, 0, ActiveResolution.Width, ActiveResolution.Height, 3, Color.Red);
+        DrawRect(0, 0, CanvasResolution.Width, CanvasResolution.Height, 3, Color.Red);
 
         _testBatch.End();
 

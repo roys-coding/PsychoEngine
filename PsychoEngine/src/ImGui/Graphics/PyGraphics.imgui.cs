@@ -48,8 +48,8 @@ public static partial class PyGraphics
             //
             if (!_editingResolution)
             {
-                Resolution[0] = ActiveResolution.Width;
-                Resolution[1] = ActiveResolution.Height;
+                Resolution[0] = CanvasResolution.Width;
+                Resolution[1] = CanvasResolution.Height;
             }
             //
             // ImGui.SetNextItemWidth(ImGui.GetContentRegionAvail().X * 0.55f);
