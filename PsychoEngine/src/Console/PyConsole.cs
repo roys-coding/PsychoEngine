@@ -1,6 +1,6 @@
 ﻿namespace PsychoEngine;
 
-public static class PyConsole
+public static partial class PyConsole
 {
     private readonly struct LogMessage
     {
@@ -14,13 +14,29 @@ public static class PyConsole
             Severity = severity;
             Category = category;
         }
+        
+        public static implicit operator string(LogMessage message)
+        {
+            return message.Message;
+        }
     }
     
     private static readonly List<LogMessage> LoggedMessages;
+    private static readonly List<string> LoggedCategories;
     
     static PyConsole()
     {
-        LoggedMessages = [];
+        LoggedMessages   = [];
+        LoggedCategories = [];
+        
+        LogDebug("LogDebug");
+        LogInfo("LogInfo");
+        LogSuccess("LogSuccess");
+        LogWarning("LogWarning");
+        LogError("LogError");
+        LogFatal("LogFatal");
+
+        InitializeImGui();
     }
 
     public static bool Clear()
@@ -31,12 +47,20 @@ public static class PyConsole
         }
         
         LoggedMessages.Clear();
+        LoggedCategories.Clear();
         return true;
     }
 
     public static void Log(string message, LogSeverity severity = LogSeverity.Info, string category = "")
     {
-        LoggedMessages.Add(new LogMessage(message, severity, category));
+        string categoryLower = category.ToLowerInvariant();
+        
+        LoggedMessages.Add(new LogMessage(message, severity, categoryLower));
+
+        if (!LoggedCategories.Contains(categoryLower))
+        {
+            LoggedCategories.Add(categoryLower);
+        }
     }
 
     public static void LogDebug(string message, string category = "")
