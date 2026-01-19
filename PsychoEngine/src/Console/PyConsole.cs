@@ -6,11 +6,13 @@ public static class PyConsole
     {
         public string Message { get; }
         public LogSeverity Severity { get; }
+        public string Category { get; }
         
-        public LogMessage(string message, LogSeverity severity)
+        public LogMessage(string message, LogSeverity severity, string category)
         {
             Message       = message;
-            Severity = severity;
+            Severity      = severity;
+            Category = category;
         }
     }
     
@@ -21,11 +23,11 @@ public static class PyConsole
         LoggedMessages = [];
     }
     
-    public static void Log(string message, LogSeverity severity) { }
-    public static void LogDebug(string message) { }
-    public static void LogInfo(string message) { }
-    public static void LogSuccess(string message) { }
-    public static void LogWarning(string message) { }
-    public static void LogError(string message) { }
-    public static void LogFatal(string message) { }
+    public static void Log(string message, LogSeverity severity = LogSeverity.Info, string category = "") { }
+    public static void LogDebug(string message, string category = "") { }
+    public static void LogInfo(string message, string category = "") { }
+    public static void LogSuccess(string message, string category = "") { }
+    public static void LogWarning(string message, string category = "") { }
+    public static void LogError(string message, string category = "") { }
+    public static void LogFatal(string message, string category = "") { }
 }

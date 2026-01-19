@@ -31,6 +31,10 @@ public partial class PyGame : Game
 
         ImGuiManager = new ImGuiManager(this);
 
+        FNALoggerEXT.LogInfo += msg => PyConsole.LogInfo(msg, "fna");
+        FNALoggerEXT.LogWarn += msg => PyConsole.LogWarning(msg, "fna");
+        FNALoggerEXT.LogError += msg => PyConsole.LogError(msg, "fna");
+
         InitializeImGui();
     }
 
