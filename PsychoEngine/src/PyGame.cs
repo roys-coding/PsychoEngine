@@ -31,7 +31,7 @@ public partial class PyGame : Game
 
         ImGuiManager = new ImGuiManager(this);
         
-        PyConsole.LogDebug("Game instance created.", "game");
+        PyConsole.LogDebug("Game instance created.", "PyGame");
 
         InitializeImGui();
     }
@@ -40,6 +40,8 @@ public partial class PyGame : Game
     {
         ImGuiManager.Initialize(_deviceManager.GraphicsDevice);
         base.Initialize();
+        
+        PyConsole.LogDebug("Game initialized.", "PyGame");
     }
 
     protected override void Update(GameTime gameTime)
@@ -66,8 +68,19 @@ public partial class PyGame : Game
 
     protected override void UnloadContent()
     {
+        PyConsole.LogDebug("Unloading game content...", "PyGame");
+        
         ImGuiManager.Terminate();
 
         base.UnloadContent();
+        
+        PyConsole.LogDebug("Game content unloaded.", "PyGame");
+    }
+
+    protected override void OnExiting(object sender, EventArgs args)
+    {
+        base.OnExiting(sender, args);
+        
+        PyConsole.LogDebug("Game exiting.", "PyGame");
     }
 }

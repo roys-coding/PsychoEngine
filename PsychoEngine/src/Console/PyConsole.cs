@@ -14,27 +14,20 @@ public static partial class PyConsole
             Severity = severity;
             Category = category;
         }
-        
+
         public static implicit operator string(LogMessage message)
         {
             return message.Message;
         }
     }
-    
+
     private static readonly List<LogMessage> LoggedMessages;
-    private static readonly List<string> LoggedCategories;
-    
+    private static readonly List<string>     LoggedCategories;
+
     static PyConsole()
     {
         LoggedMessages   = [];
         LoggedCategories = [];
-        
-        LogDebug("LogDebug");
-        LogInfo("LogInfo");
-        LogSuccess("LogSuccess");
-        LogWarning("LogWarning");
-        LogError("LogError");
-        LogFatal("LogFatal");
 
         InitializeImGui();
     }
@@ -45,7 +38,7 @@ public static partial class PyConsole
         {
             return false;
         }
-        
+
         LoggedMessages.Clear();
         LoggedCategories.Clear();
         return true;
@@ -54,7 +47,7 @@ public static partial class PyConsole
     public static void Log(string message, LogSeverity severity = LogSeverity.Info, string category = "")
     {
         string categoryLower = category.ToLowerInvariant();
-        
+
         LoggedMessages.Add(new LogMessage(message, severity, categoryLower));
 
         if (!LoggedCategories.Contains(categoryLower))
