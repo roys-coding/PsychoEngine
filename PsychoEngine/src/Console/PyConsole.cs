@@ -1,4 +1,4 @@
-﻿namespace PsychoEngine.Console;
+﻿namespace PsychoEngine;
 
 public static class PyConsole
 {

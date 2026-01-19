@@ -1,4 +1,4 @@
-﻿namespace PsychoEngine.Console.Enums;
+﻿namespace PsychoEngine;
 
 public enum LogSeverity
 {
