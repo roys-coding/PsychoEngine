@@ -8,7 +8,7 @@ public struct GraphicsResolution : IEquatable<GraphicsResolution>, IComparable<G
     public int Height { get; set; }
 
     public float AspectRatio => (float)Width / Height;
-    public int Area => Width * Height;
+    public int   Area        => Width * Height;
 
     public GraphicsResolution(int width, int height)
     {

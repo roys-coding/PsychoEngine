@@ -1,10 +1,11 @@
 ﻿using Hexa.NET.ImGui;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace PsychoEngine.Graphics;
 
 public static partial class PyGraphics
 {
-    private static readonly string[] ExpandNames  = Enum.GetNames<CanvasResizingPolicy>();
+    private static readonly string[] ExpandNames  = Enum.GetNames<CanvasSizingPolicy>();
     private static readonly string[] ScalingNames = Enum.GetNames<CanvasScalingPolicy>();
 
     private static bool _showSupportedResolutions;
@@ -28,11 +29,11 @@ public static partial class PyGraphics
         {
             ImGui.SeparatorText("Policies");
             
-            int  expandMode    = (int)CanvasResizingPolicy;
+            int  expandMode    = (int)CanvasSizingPolicy;
             bool expandChanged = ImGui.Combo("Resizing", ref expandMode, ExpandNames, ExpandNames.Length);
             if (expandChanged)
             {
-                SetCanvasExpandPolicy((CanvasResizingPolicy)expandMode);
+                SetCanvasExpandPolicy((CanvasSizingPolicy)expandMode);
             }
 
             int  scalingMode    = (int)CanvasScalingPolicy;

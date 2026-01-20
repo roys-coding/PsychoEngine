@@ -25,10 +25,11 @@ public static partial class PyGraphics
 
     // Canvas & scaling.
     private static readonly SortedSet<GraphicsResolution> SupportedResolutions;
-    private static          GraphicsResolution            _currentResolution;
 
     private static RenderTarget2D?      _canvas;
     private static CustomScalingMethod? _customScalingMethod;
+
+    private static GraphicsResolution _selectedResolution;
 
     #endregion
 
@@ -68,13 +69,14 @@ public static partial class PyGraphics
                 throw new NullReferenceException("Canvas is null." +
                                                  "Wait until the GraphicsDevice is initialized before referencing it.");
             }
-            
+
             return new GraphicsResolution(_canvas.Width, _canvas.Height);
         }
     }
+
     public static Rectangle CanvasBounds { get; private set; }
 
-    public static CanvasResizingPolicy CanvasResizingPolicy { get; private set; }
+    public static CanvasSizingPolicy CanvasSizingPolicy { get; private set; }
     public static CanvasScalingPolicy  CanvasScalingPolicy  { get; private set; }
 
     public static bool VerticalSync  => DeviceManager.SynchronizeWithVerticalRetrace;
@@ -87,22 +89,22 @@ public static partial class PyGraphics
         SupportedResolutions =
         [
             new GraphicsResolution(800, 600),
-            // new GraphicsResolution(1024, 768),
-            // new GraphicsResolution(1152, 864),
-            // new GraphicsResolution(1176, 664),
-            // new GraphicsResolution(1280, 720),
-            // new GraphicsResolution(1280, 800),
-            // new GraphicsResolution(1280, 960),
-            // new GraphicsResolution(1280, 1024),
-            // new GraphicsResolution(1360, 768),
-            // new GraphicsResolution(1366, 768),
-            // new GraphicsResolution(1440, 900),
-            // new GraphicsResolution(1440, 1080),
-            // new GraphicsResolution(1600, 900),
-            // new GraphicsResolution(1600, 1024),
-            // new GraphicsResolution(1680, 1050),
-            // new GraphicsResolution(1768, 992),
-            // new GraphicsResolution(1920, 1080),
+            new GraphicsResolution(1024, 768),
+            new GraphicsResolution(1152, 864),
+            new GraphicsResolution(1176, 664),
+            new GraphicsResolution(1280, 720),
+            new GraphicsResolution(1280, 800),
+            new GraphicsResolution(1280, 960),
+            new GraphicsResolution(1280, 1024),
+            new GraphicsResolution(1360, 768),
+            new GraphicsResolution(1366, 768),
+            new GraphicsResolution(1440, 900),
+            new GraphicsResolution(1440, 1080),
+            new GraphicsResolution(1600, 900),
+            new GraphicsResolution(1600, 1024),
+            new GraphicsResolution(1680, 1050),
+            new GraphicsResolution(1768, 992),
+            new GraphicsResolution(1920, 1080),
         ];
     }
 
@@ -129,16 +131,16 @@ public static partial class PyGraphics
         CalculateCanvasBounds(PyWindow.Width, PyWindow.Height);
     }
 
-    public static void SetCanvasExpandPolicy(CanvasResizingPolicy policy)
+    public static void SetCanvasExpandPolicy(CanvasSizingPolicy policy)
     {
-        if (policy == CanvasResizingPolicy)
+        if (policy == CanvasSizingPolicy)
         {
             return;
         }
 
-        CanvasResizingPolicy = policy;
-        CreateCanvas(PyWindow.Width, PyWindow.Height);
+        CanvasSizingPolicy = policy;
         CalculateCanvasBounds(PyWindow.Width, PyWindow.Height);
+        CreateCanvas();
     }
 
     public static void SetVerticalSync(bool vSync)
@@ -173,7 +175,7 @@ public static partial class PyGraphics
 
         // Default settings.
         CanvasScalingPolicy  = CanvasScalingPolicy.ScaleToFit;
-        CanvasResizingPolicy = CanvasResizingPolicy.Fixed;
+        CanvasSizingPolicy = CanvasSizingPolicy.BiggestSupportedResolution;
 
         // Event subscriptions.
         PyWindow.OnSizeChanged      += PyWindowOnOnSizeChanged;
@@ -186,11 +188,9 @@ public static partial class PyGraphics
         #endregion
     }
 
-    [AllowNull]
-    private static Texture2D   _testTexture;
-    [AllowNull]
-    private static SpriteBatch _testBatch;
-    private static Vector2     _texturePos;
+    [AllowNull] private static Texture2D   _testTexture;
+    [AllowNull] private static SpriteBatch _testBatch;
+    private static             Vector2     _texturePos;
 
     internal static void Draw()
     {
@@ -239,13 +239,13 @@ public static partial class PyGraphics
 
         _testBatch.Draw(_canvas, CanvasBounds, Color.White);
 
-        int halfCurrResX = (int)(_currentResolution.Width * 0.5f);
-        int halfCurrResY = (int)(_currentResolution.Height * 0.5f);
+        int halfCurrResX = (int)(_selectedResolution.Width * 0.5f);
+        int halfCurrResY = (int)(_selectedResolution.Height * 0.5f);
 
         DrawRect(winMiddleX - halfCurrResX,
                  winMiddleY - halfCurrResY,
-                 _currentResolution.Width,
-                 _currentResolution.Height,
+                 _selectedResolution.Width,
+                 _selectedResolution.Height,
                  2,
                  Color.White);
 
@@ -278,52 +278,65 @@ public static partial class PyGraphics
         DeviceManager.ApplyChanges();
     }
 
-    private static void SelectResolution(int windowWidth, int windowHeight)
+    private static void UpdateResolution(int windowWidth, int windowHeight)
     {
-        // This method selects the biggest possible supported resolution (in area) that fits inside the game window.
-        
-        GraphicsResolution selectedResolution = SupportedResolutions.First();
-        int                lastResolutionArea = 0;
-        GraphicsResolution windowResolution   = new(windowWidth, windowHeight);
-
-        foreach (GraphicsResolution resolution in SupportedResolutions)
+        switch (CanvasSizingPolicy)
         {
-            // Skip resolutions bigger than the current window size.
-            if (resolution > windowResolution)
-            {
-                continue;
-            }
+            case CanvasSizingPolicy.BiggestSupportedResolution:
+                // Selects the biggest possible supported resolution (in area) that fits inside the game window.
 
-            // Select resolution with the greatest area.
-            if (resolution.Area <= lastResolutionArea)
-            {
-                continue;
-            }
+                GraphicsResolution selectedResolution = SupportedResolutions.First();
+                int                lastResolutionArea = 0;
+                GraphicsResolution windowResolution   = new(windowWidth, windowHeight);
 
-            selectedResolution = resolution;
-            lastResolutionArea = resolution.Area;
+                foreach (GraphicsResolution resolution in SupportedResolutions)
+                {
+                    // Skip resolutions bigger than the current window size.
+                    if (resolution > windowResolution)
+                    {
+                        continue;
+                    }
+
+                    // Select resolution with the greatest area.
+                    if (resolution.Area <= lastResolutionArea)
+                    {
+                        continue;
+                    }
+
+                    selectedResolution = resolution;
+                    lastResolutionArea = resolution.Area;
+                }
+
+                _selectedResolution = selectedResolution;
+                break;
+
+            case CanvasSizingPolicy.MatchWindowSize:
+                // Resolution simply matches the window size.
+                _selectedResolution = new GraphicsResolution(windowWidth, windowHeight);
+                break;
+
+            default: 
+                throw new NotSupportedException($"Resizing policy '{CanvasSizingPolicy}' not supported.");
         }
-
-        _currentResolution = selectedResolution;
     }
 
     private static void CalculateCanvasBounds(int windowWidth, int windowHeight)
     {
         Rectangle bounds;
 
-        switch (CanvasResizingPolicy)
+        switch (CanvasSizingPolicy)
         {
-            case CanvasResizingPolicy.Fixed:
+            case CanvasSizingPolicy.BiggestSupportedResolution:
                 switch (CanvasScalingPolicy)
                 {
                     case CanvasScalingPolicy.NoScaling:
-                        bounds = ScalingNoScaling(_currentResolution.Width, _currentResolution.Height);
+                        bounds = ScalingNoScaling(_selectedResolution.Width, _selectedResolution.Height);
 
                         break;
 
                     case CanvasScalingPolicy.ScaleToFit:
-                        bounds = ScalingScaleToFit(_currentResolution.Width,
-                                                   _currentResolution.Height,
+                        bounds = ScalingScaleToFit(_selectedResolution.Width,
+                                                   _selectedResolution.Height,
                                                    windowWidth,
                                                    windowHeight);
 
@@ -335,18 +348,19 @@ public static partial class PyGraphics
                         break;
 
                     case CanvasScalingPolicy.Integer:
-                        bounds = ScalingInteger(_currentResolution.Width, _currentResolution.Height);
+                        bounds = ScalingInteger(_selectedResolution.Width, _selectedResolution.Height);
 
                         break;
 
                     case CanvasScalingPolicy.Custom:
                         if (_customScalingMethod is null)
                         {
-                            throw new NullReferenceException($"No custom scaling method is defined. Use {nameof(SetCanvasCustomScalingMethod)} to define one.");
+                            throw new
+                                NullReferenceException($"No custom scaling method is defined. Use {nameof(SetCanvasCustomScalingMethod)} to define one.");
                         }
 
-                        bounds = _customScalingMethod(_currentResolution.Width,
-                                                      _currentResolution.Height,
+                        bounds = _customScalingMethod(_selectedResolution.Width,
+                                                      _selectedResolution.Height,
                                                       windowWidth,
                                                       windowHeight);
 
@@ -357,7 +371,7 @@ public static partial class PyGraphics
 
                 break;
 
-            case CanvasResizingPolicy.MatchSize:
+            case CanvasSizingPolicy.MatchWindowSize:
                 // Fill entire window.
                 bounds.Width  = windowWidth;
                 bounds.Height = windowHeight;
@@ -366,36 +380,30 @@ public static partial class PyGraphics
 
                 break;
 
-            default: throw new NotSupportedException($"Expand policy '{CanvasResizingPolicy}' not supported.");
+            default: throw new NotSupportedException($"Resizing policy '{CanvasSizingPolicy}' not supported.");
         }
 
         CanvasBounds = bounds;
     }
 
-    private static void CreateCanvas(int windowWidth, int windowHeight)
+    private static void CreateCanvas()
     {
-        int resolutionWidth;
-        int resolutionHeight;
+        int canvasWidth  = _selectedResolution.Width;
+        int canvasHeight = _selectedResolution.Height;
 
-        switch (CanvasResizingPolicy)
+        if (_canvas != null)
         {
-            case CanvasResizingPolicy.Fixed:
-                resolutionWidth  = _currentResolution.Width;
-                resolutionHeight = _currentResolution.Height;
+            // Skip if canvas size remains unchanged.
+            if (canvasWidth == _canvas.Width && canvasHeight == _canvas.Height)
+            {
+                return;
+            }
 
-                break;
-
-            case CanvasResizingPolicy.MatchSize:
-                resolutionWidth  = windowWidth;
-                resolutionHeight = windowHeight;
-
-                break;
-
-            default: throw new NotSupportedException($"Resizing policy '{CanvasResizingPolicy}' not supported.");
+            // Dispose previous canvas.
+            _canvas.Dispose();
         }
 
-        _canvas?.Dispose();
-        _canvas = new RenderTarget2D(Device, resolutionWidth, resolutionHeight);
+        _canvas = new RenderTarget2D(Device, canvasWidth, canvasHeight);
     }
 
     #region Scaling methods
@@ -405,6 +413,7 @@ public static partial class PyGraphics
         int timesX = (int)((float)PyWindow.Width / resolutionWidth);
         int timesY = (int)((float)PyWindow.Height / resolutionHeight);
         int scale  = (int)MathF.Min(timesX, timesY);
+        scale = Math.Max(scale, 1);
 
         int boundsWidth  = resolutionWidth * scale;
         int boundsHeight = resolutionHeight * scale;
@@ -477,10 +486,10 @@ public static partial class PyGraphics
 
         int windowWidth  = Device.PresentationParameters.BackBufferWidth;
         int windowHeight = Device.PresentationParameters.BackBufferHeight;
-        
-        SelectResolution(windowWidth, windowHeight);
-        CreateCanvas(windowWidth, windowHeight);
+
+        UpdateResolution(windowWidth, windowHeight);
         CalculateCanvasBounds(windowWidth, windowHeight);
+        CreateCanvas();
 
         _testTexture = new Texture2D(Device, 1, 1, false, SurfaceFormat.Color);
 
@@ -499,9 +508,9 @@ public static partial class PyGraphics
             return;
         }
 
-        SelectResolution(args.WindowWidth, args.WindowHeight);
-        CreateCanvas(args.WindowWidth, args.WindowHeight);
+        UpdateResolution(args.WindowWidth, args.WindowHeight);
         CalculateCanvasBounds(args.WindowWidth, args.WindowHeight);
+        CreateCanvas();
     }
 
     private static void DrawRect(int x, int y, int width, int height, int weight, Color color)
