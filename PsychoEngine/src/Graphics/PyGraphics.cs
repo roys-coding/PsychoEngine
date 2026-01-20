@@ -7,7 +7,7 @@ namespace PsychoEngine.Graphics;
 
 public static partial class PyGraphics
 {
-    public delegate Rectangle CustomScalingMethod(
+    public delegate Rectangle ScalingMethod(
         int resolutionWidth,
         int resolutionHeight,
         int windowWidth,
@@ -24,10 +24,15 @@ public static partial class PyGraphics
     private static bool _isInitialized;
 
     // Canvas & scaling.
+    private const double CanvasCacheClearTime = 15;
+    private const int    CanvasCacheCapacity  = 3;
+    
     private static readonly SortedSet<GraphicsResolution> SupportedResolutions;
+    private static readonly List<RenderTarget2D>          CanvasCache;
 
+    private static TimeSpan             _lastCanvasUpdateTime;
     private static RenderTarget2D?      _canvas;
-    private static CustomScalingMethod? _customScalingMethod;
+    private static ScalingMethod? _customScalingMethod;
 
     private static GraphicsResolution _selectedResolution;
 
@@ -106,17 +111,19 @@ public static partial class PyGraphics
             new GraphicsResolution(1768, 992),
             new GraphicsResolution(1920, 1080),
         ];
+
+        CanvasCache = new List<RenderTarget2D>(CanvasCacheCapacity);
     }
 
     #region Public interface
 
-    public static void SetCanvasCustomScalingMethod(CustomScalingMethod method)
+    public static void SetCanvasCustomScalingMethod(ScalingMethod method)
     {
         _customScalingMethod = method;
 
         if (CanvasScalingPolicy == CanvasScalingPolicy.Custom)
         {
-            CalculateCanvasBounds(PyWindow.Width, PyWindow.Height);
+            UpdateCanvasBounds(PyWindow.Width, PyWindow.Height);
         }
     }
 
@@ -128,7 +135,7 @@ public static partial class PyGraphics
         }
 
         CanvasScalingPolicy = policy;
-        CalculateCanvasBounds(PyWindow.Width, PyWindow.Height);
+        UpdateCanvasBounds(PyWindow.Width, PyWindow.Height);
     }
 
     public static void SetCanvasExpandPolicy(CanvasSizingPolicy policy)
@@ -139,8 +146,8 @@ public static partial class PyGraphics
         }
 
         CanvasSizingPolicy = policy;
-        CalculateCanvasBounds(PyWindow.Width, PyWindow.Height);
-        CreateCanvas();
+        UpdateCanvasBounds(PyWindow.Width, PyWindow.Height);
+        UpdateCanvas();
     }
 
     public static void SetVerticalSync(bool vSync)
@@ -176,6 +183,8 @@ public static partial class PyGraphics
         // Default settings.
         CanvasScalingPolicy  = CanvasScalingPolicy.ScaleToFit;
         CanvasSizingPolicy = CanvasSizingPolicy.BiggestSupportedResolution;
+        SetVerticalSync(true);
+        SetFixedTimeStep(true);
 
         // Event subscriptions.
         PyWindow.OnSizeChanged      += PyWindowOnOnSizeChanged;
@@ -194,6 +203,22 @@ public static partial class PyGraphics
 
     internal static void Draw()
     {
+        if (CanvasCache.Count > 0)
+        {
+            TimeSpan timeSinceLastCanvasUpdate = PyGameTimes.Draw.TotalGameTime - _lastCanvasUpdateTime;
+
+            // Clear canvas cache if certain time has passed since the last canvas update.
+            if (timeSinceLastCanvasUpdate.TotalSeconds >= CanvasCacheClearTime)
+            {
+                foreach (RenderTarget2D renderTarget2D in CanvasCache)
+                {
+                    renderTarget2D.Dispose();
+                }
+                
+                CanvasCache.Clear();
+            }
+        }
+        
         if (PyMouse.IsDragging(MouseButton.Left))
         {
             _texturePos   =  PyMouse.Position.ToVector() * (CanvasResolution.ToVector2() / PyWindow.Size.ToVector());
@@ -320,7 +345,7 @@ public static partial class PyGraphics
         }
     }
 
-    private static void CalculateCanvasBounds(int windowWidth, int windowHeight)
+    private static void UpdateCanvasBounds(int windowWidth, int windowHeight)
     {
         Rectangle bounds;
 
@@ -386,8 +411,10 @@ public static partial class PyGraphics
         CanvasBounds = bounds;
     }
 
-    private static void CreateCanvas()
+    private static void UpdateCanvas()
     {
+        _lastCanvasUpdateTime = PyGameTimes.Draw.TotalGameTime;
+        
         int canvasWidth  = _selectedResolution.Width;
         int canvasHeight = _selectedResolution.Height;
 
@@ -398,11 +425,37 @@ public static partial class PyGraphics
             {
                 return;
             }
-
-            // Dispose previous canvas.
-            _canvas.Dispose();
         }
 
+        if (_canvas != null)
+        {
+            // Let's not cache too many RenderTargets.
+            if (CanvasCache.Count >= CanvasCacheCapacity)
+            {
+                CanvasCache[0].Dispose();
+                CanvasCache.RemoveAt(0);
+            }
+            
+            CanvasCache.Add(_canvas);
+        }
+
+        // Since RenderTarget2Ds are graphic resources, we want to avoid instantiating lots of them,
+        // so we cache them for a few seconds and re-use them if necessary.
+        for (int i = 0; i < CanvasCache.Count; i++)
+        {
+            RenderTarget2D cachedCanvas = CanvasCache[i];
+
+            if (cachedCanvas.Width != canvasWidth || cachedCanvas.Height != canvasHeight)
+            {
+                continue;
+            }
+
+            _canvas = cachedCanvas;
+            CanvasCache.RemoveAt(i);
+            
+            return;
+        }
+        
         _canvas = new RenderTarget2D(Device, canvasWidth, canvasHeight);
     }
 
@@ -488,8 +541,8 @@ public static partial class PyGraphics
         int windowHeight = Device.PresentationParameters.BackBufferHeight;
 
         UpdateResolution(windowWidth, windowHeight);
-        CalculateCanvasBounds(windowWidth, windowHeight);
-        CreateCanvas();
+        UpdateCanvasBounds(windowWidth, windowHeight);
+        UpdateCanvas();
 
         _testTexture = new Texture2D(Device, 1, 1, false, SurfaceFormat.Color);
 
@@ -509,8 +562,8 @@ public static partial class PyGraphics
         }
 
         UpdateResolution(args.WindowWidth, args.WindowHeight);
-        CalculateCanvasBounds(args.WindowWidth, args.WindowHeight);
-        CreateCanvas();
+        UpdateCanvasBounds(args.WindowWidth, args.WindowHeight);
+        UpdateCanvas();
     }
 
     private static void DrawRect(int x, int y, int width, int height, int weight, Color color)

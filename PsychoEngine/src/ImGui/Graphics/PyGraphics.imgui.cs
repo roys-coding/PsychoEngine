@@ -85,6 +85,16 @@ public static partial class PyGraphics
             // {
             //     _editingResolution = false;
             // }
+
+            if (ImGui.BeginChild("canvas cache"))
+            {
+                foreach (RenderTarget2D canvas in CanvasCache)
+                {
+                    ImGui.Text($"{canvas.Width}x{canvas.Height}");
+                }
+            }
+            
+            ImGui.EndChild();
         }
 
         if (ImGui.CollapsingHeader("Settings"))
