@@ -44,6 +44,11 @@ public static partial class PyConsole
         return true;
     }
 
+    public static string[] GetLoggedCategories()
+    {
+        return LoggedCategories.ToArray();
+    }
+
     public static void Log(string message, LogSeverity severity = LogSeverity.Info, string category = "")
     {
         string categoryLower = category.ToLowerInvariant();
